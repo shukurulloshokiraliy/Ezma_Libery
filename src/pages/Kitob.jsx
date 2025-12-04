@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Box, Text, Skeleton, Card, Image, useMantineColorScheme, Badge, Button, Group, ActionIcon } from '@mantine/core';
+import {
+  Container,
+  Box,
+  Text,
+  Skeleton,
+  Card,
+  Image,
+  Badge,
+  Button,
+  ActionIcon
+} from '@mantine/core';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import axios from 'axios';
 
@@ -10,12 +20,23 @@ const api = axios.create({
 const BOOK_IMAGE = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60';
 
 const Kitob = () => {
-  const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
+  const [isDark, setIsDark] = useState(false);
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [scrollPos, setScrollPos] = useState(0);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('darkMode');
+    if (saved) setIsDark(saved === 'true');
+
+    const handleDarkModeChange = () => {
+      const newMode = localStorage.getItem('darkMode') === 'true';
+      setIsDark(newMode);
+    };
+
+    window.addEventListener('darkModeChange', handleDarkModeChange);
+    return () => window.removeEventListener('darkModeChange', handleDarkModeChange);
+  }, []);
 
   useEffect(() => {
     fetchBooks();
@@ -25,13 +46,10 @@ const Kitob = () => {
     try {
       setLoading(true);
       const response = await api.get('books/books/');
-      console.log('API Response:', response.data);
-      
       const booksData = Array.isArray(response.data) ? response.data : response.data.results || [];
       setBooks(booksData);
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching books:', err);
     } finally {
       setLoading(false);
     }
@@ -49,23 +67,19 @@ const Kitob = () => {
   };
 
   return (
-    <Box py={60} bg={isDark ? 'dark.9' : 'gray.0'}>
+    <Box py={60} bg={isDark ? 'dark.9' : 'gray.0'} minHeight="100vh">
       <Container size="xl">
-        {/* Title */}
-        <Text size="xl" fw={700} mb={40}>
+        <Text size="xl" fw={700} mb={40} c={isDark ? 'gray.0' : 'dark'}>
           Eng yangi kitoblar
         </Text>
 
-        {/* Error handling */}
         {error && (
-          <Box bg="red.1" p="md" mb={20} style={{ borderRadius: '8px' }}>
-            <Text c="red">Xatolik: {error}</Text>
+          <Box bg={isDark ? 'red.9' : 'red.1'} p="md" mb={20} style={{ borderRadius: '8px' }}>
+            <Text c={isDark ? 'red.1' : 'red'}>Xatolik: {error}</Text>
           </Box>
         )}
 
-        {/* Slider Container */}
         <Box style={{ position: 'relative' }}>
-          {/* Left Button */}
           <ActionIcon
             onClick={() => scroll('left')}
             style={{
@@ -83,8 +97,6 @@ const Kitob = () => {
             <IconChevronLeft size={20} />
           </ActionIcon>
 
-
-          {/* Books Slider */}
           <Box
             id="booksContainer"
             style={{
@@ -103,22 +115,10 @@ const Kitob = () => {
             }}
           >
             {loading ? (
-              // Loading skeleton
               <>
                 {[1, 2, 3, 4].map((i) => (
-                  <Box
-                    key={i}
-                    style={{
-                      flexShrink: 0,
-                      width: '280px',
-                    }}
-                  >
-                    <Card
-                      shadow="sm"
-                      radius="md"
-                      withBorder={false}
-                      bg={isDark ? 'dark.7' : 'white'}
-                    >
+                  <Box key={i} style={{ flexShrink: 0, width: '280px' }}>
+                    <Card shadow="sm" radius="md" withBorder={false} bg={isDark ? 'dark.7' : 'white'}>
                       <Card.Section>
                         <Skeleton height={250} />
                       </Card.Section>
@@ -132,75 +132,24 @@ const Kitob = () => {
                 ))}
               </>
             ) : books.length > 0 ? (
-              // Books
               books.map((book) => (
-                <Box
-                  key={book.id}
-                  style={{
-                    flexShrink: 0,
-                    width: '280px',
-                  }}
-                >
-                  <Card
-                    shadow="sm"
-                    radius="md"
-                    withBorder={false}
-                    style={{ overflow: 'hidden', height: '100%' }}
-                    bg={isDark ? 'dark.7' : 'white'}
-                  >
-                    {/* Book Image */}
+                <Box key={book.id} style={{ flexShrink: 0, width: '280px' }}>
+                  <Card shadow="sm" radius="md" withBorder={false} bg={isDark ? 'dark.7' : 'white'} style={{ overflow: 'hidden', height: '100%' }}>
                     <Card.Section>
-                      <Image
-                        src={BOOK_IMAGE}
-                        height={250}
-                        alt={book.name}
-                        style={{ objectFit: 'cover' }}
-                      />
+                      <Image src={BOOK_IMAGE} height={250} alt={book.name} style={{ objectFit: 'cover' }} />
                     </Card.Section>
-
-                    {/* Book Info */}
                     <Box p="lg">
-                      {/* Title */}
-                      <Text fw={600} size="sm" mb="xs" lineClamp={2}>
+                      <Text fw={600} size="sm" mb="xs" lineClamp={2} c={isDark ? 'gray.0' : 'dark'}>
                         {book.name}
                       </Text>
-
-                      {/* Author */}
-                      {book.author && (
-                        <Text size="xs" c="dimmed" mb="md">
-                          {book.author}
-                        </Text>
-                      )}
-
-                      {/* Publisher */}
-                      {book.publisher && (
-                        <Text size="xs" c="dimmed" mb="md">
-                          {book.publisher}
-                        </Text>
-                      )}
-
-                      {/* Quantity Badge */}
+                      {book.author && <Text size="xs" c="dimmed" mb="md">{book.author}</Text>}
+                      {book.publisher && <Text size="xs" c="dimmed" mb="md">{book.publisher}</Text>}
                       {book.quantity_in_library && (
-                        <Badge
-                          size="lg"
-                          radius="xl"
-                          color="cyan"
-                          variant="light"
-                          fullWidth
-                          mb="md"
-                        >
+                        <Badge size="lg" radius="xl" color="cyan" variant="light" fullWidth mb="md">
                           {book.quantity_in_library} TA KITOB MAVJUD
                         </Badge>
                       )}
-
-
-                      {/* View Button */}
-                      <Button
-                        variant="light"
-                        color="blue"
-                        fullWidth
-                        size="sm"
-                      >
+                      <Button variant="light" color="blue" fullWidth size="sm">
                         Ko'rish
                       </Button>
                     </Box>
@@ -208,11 +157,10 @@ const Kitob = () => {
                 </Box>
               ))
             ) : (
-              <Text c="dimmed">Kitoblar topilmadi</Text>
+              <Text c="dimmed">{isDark ? '#fff' : '#000'}Kitoblar topilmadi</Text>
             )}
           </Box>
 
-          {/* Right Button */}
           <ActionIcon
             onClick={() => scroll('right')}
             style={{

@@ -138,10 +138,12 @@ const Header = () => {
               {isDark ? "🌙" : "☀️"}
             </div>
           </button>
-
-          <Button variant="filled" radius="md">
+              <NavLink to="/login" style={{ textDecoration: 'none' }}>
+              <Button variant="filled" radius="md">
             Kutubxonachi bo'lish
           </Button>
+              </NavLink>
+          
         </Group>
       </Group>
     </header>

@@ -17,7 +17,7 @@ const api = axios.create({
   baseURL: 'http://176.57.208.162:8000/api/v1/',
 });
 
-const BOOK_IMAGE = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60';
+const BOOK_IMAGE = 'https://org-ave-jimmy-learners.trycloudflare.com/api/v1/books/search/book/?q=kitob-nomini-bervorasiz';
 
 const Kitob = () => {
   const [isDark, setIsDark] = useState(false);

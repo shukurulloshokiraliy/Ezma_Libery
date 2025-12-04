@@ -27,7 +27,7 @@ const HomePage = () => {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Dark mode saqlash va sinxronlashtirish
+
   useEffect(() => {
     const saved = localStorage.getItem('darkMode');
     if (saved) setIsDark(saved === 'true');
@@ -41,7 +41,6 @@ const HomePage = () => {
     return () => window.removeEventListener('darkModeChange', handleDarkModeChange);
   }, []);
 
-  // Kitoblarni fetch qilish
   useEffect(() => {
     fetchBooks();
   }, []);
@@ -60,7 +59,6 @@ const HomePage = () => {
     }
   };
 
-  // Qidiruvni local filter orqali amalga oshirish
   const filteredBooks = books.filter((book) =>
     book.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (book.author && book.author.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -125,7 +123,7 @@ const HomePage = () => {
               <Card key={book.id} shadow="sm" radius="md" bg={isDark ? 'dark.7' : 'white'}>
                 <Card.Section>
                   <Image
-                    src={book.image || BOOK_IMAGE} // fallback image
+                    src={book.image || BOOK_IMAGE}
                     height={250}
                     alt={book.name}
                     style={{ objectFit: 'cover' }}

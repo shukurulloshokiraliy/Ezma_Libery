@@ -15,10 +15,10 @@ import { IconSearch } from '@tabler/icons-react';
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://176.57.208.162:8000/api/v1/',
+  baseURL: 'https://org-ave-jimmy-learners.trycloudflare.com/api/v1/',
 });
 
-const BOOK_IMAGE = 'https://org-ave-jimmy-learners.trycloudflare.com/api/v1/books/search/book/?q=kitob-nomini-bervorasiz';
+const BOOK_IMAGE = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60';
 
 const HomePage = () => {
   const [isDark, setIsDark] = useState(false);
@@ -27,6 +27,7 @@ const HomePage = () => {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Dark mode saqlash va sinxronlashtirish
   useEffect(() => {
     const saved = localStorage.getItem('darkMode');
     if (saved) setIsDark(saved === 'true');
@@ -40,6 +41,7 @@ const HomePage = () => {
     return () => window.removeEventListener('darkModeChange', handleDarkModeChange);
   }, []);
 
+  // Kitoblarni fetch qilish
   useEffect(() => {
     fetchBooks();
   }, []);
@@ -47,36 +49,34 @@ const HomePage = () => {
   const fetchBooks = async () => {
     try {
       setLoading(true);
-      const response = await api.get('books/books/');
+      const response = await api.get('books/books/'); // to'g'ri URL
       const booksData = Array.isArray(response.data) ? response.data : response.data.results || [];
       setBooks(booksData);
     } catch (err) {
       setError(err.message);
+      console.error('Error fetching books:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredBooks = books.filter((book) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      book.name?.toLowerCase().includes(query) ||
-      book.author?.toLowerCase().includes(query) ||
-      book.publisher?.toLowerCase().includes(query)
-    );
-  });
+  // Qidiruvni local filter orqali amalga oshirish
+  const filteredBooks = books.filter((book) =>
+    book.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (book.author && book.author.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
     <Box py={60} px={20} bg={isDark ? 'dark.9' : 'gray.0'} minHeight="100vh">
       <Container size="xl">
-      <Text 
-  size="xl" fw={700} mb={30}
-  c={isDark ? 'white' : 'dark'}
-  variant="gradient"
-  gradient={{ from: 'blue', to: 'cyan', deg: 45 }}
->
-  Kitoblar bir joyda
-</Text>
+        <Text 
+          size="xl" fw={700} mb={30}
+          c={isDark ? 'white' : 'dark'}
+          variant="gradient"
+          gradient={{ from: 'blue', to: 'cyan', deg: 45 }}
+        >
+          Kitoblar bir joyda
+        </Text>
 
         <Box mb={40}>
           <TextInput
@@ -124,7 +124,12 @@ const HomePage = () => {
             {filteredBooks.map((book) => (
               <Card key={book.id} shadow="sm" radius="md" bg={isDark ? 'dark.7' : 'white'}>
                 <Card.Section>
-                  <Image src={BOOK_IMAGE} height={250} alt={book.name} style={{ objectFit: 'cover' }} />
+                  <Image
+                    src={book.image || BOOK_IMAGE} // fallback image
+                    height={250}
+                    alt={book.name}
+                    style={{ objectFit: 'cover' }}
+                  />
                 </Card.Section>
                 <Box p="lg">
                   <Text fw={600} size="sm" mb="xs" lineClamp={2} c={isDark ? 'gray.0' : 'dark'}>

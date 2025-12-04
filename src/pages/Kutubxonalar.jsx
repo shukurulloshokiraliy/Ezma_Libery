@@ -1,31 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Container, 
-  Box, 
-  Text, 
-  SimpleGrid, 
-  Paper, 
-  Group, 
-  Button,
-  TextInput,
-  Stack,
-  Flex,
-  Card,
-  Badge,
-  ActionIcon,
-  Divider
+  Container, Box, Text, SimpleGrid, Paper, Group, Button,
+  TextInput, Stack, Flex, Card, Badge, ActionIcon, Divider, Skeleton
 } from '@mantine/core';
 import { 
-  IconSearch, 
-  IconMapPin,
-  IconBook, 
-  IconPhone,
-  IconBrandTelegram,
-  IconArrowsSort,
-  IconGrid3x3,
-  IconList,
-  IconCheck
+  IconSearch, IconMapPin, IconBook, IconPhone,
+  IconBrandTelegram, IconArrowsSort, IconGrid3x3, IconList, IconCheck
 } from '@tabler/icons-react';
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'https://org-ave-jimmy-learners.trycloudflare.com/api/v1/',
+});
+
+const BOOK_IMAGE = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60';
 
 const Kutubxonalar = () => {
   const [isDark, setIsDark] = useState(false);
@@ -33,45 +21,49 @@ const Kutubxonalar = () => {
   const [sortBy, setSortBy] = useState('name-asc');
   const [viewMode, setViewMode] = useState('grid');
   const [onlyWithBooks, setOnlyWithBooks] = useState(false);
-
-  const kutubxonalar = [
-    { id: 1, name: "Abbosov", books: 45, phone: "+998999999999", telegram: "@telegram.org", location: "Google Maps", image: "https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=400&h=300&fit=crop" },
-    { id: 2, name: "aziz", books: 0, phone: "+998901864670", telegram: "@ASN", location: "Google Maps", image: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=400&h=300&fit=crop" },
-    { id: 3, name: "Azizbek", books: 0, phone: "+998990127331", telegram: "@@in_crease", location: "Google Maps", image: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400&h=300&fit=crop" },
-    { id: 4, name: "Bakhtiyor", books: 120, phone: "+998901234567", telegram: "@bakhtiyor", location: "Google Maps", image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop" },
-    { id: 5, name: "Dilshod", books: 89, phone: "+998909876543", telegram: "@dilshod_library", location: "Google Maps", image: "https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=400&h=300&fit=crop" },
-    { id: 6, name: "Farrux", books: 0, phone: "+998905551234", telegram: "@farrux", location: "Google Maps", image: "https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=400&h=300&fit=crop" }
-  ];
+  const [libraries, setLibraries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('darkMode');
     if (saved) setIsDark(saved === 'true');
-
-    const handleDarkModeChange = () => {
-      setIsDark(localStorage.getItem('darkMode') === 'true');
-    };
+    const handleDarkModeChange = () => setIsDark(localStorage.getItem('darkMode') === 'true');
     window.addEventListener('darkModeChange', handleDarkModeChange);
     return () => window.removeEventListener('darkModeChange', handleDarkModeChange);
   }, []);
 
-  const sortedKutubxonalar = [...kutubxonalar]
-    .filter(k => {
-      const matchesSearch = k.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesBooks = !onlyWithBooks || k.books > 0;
-      return matchesSearch && matchesBooks;
-    })
+  useEffect(() => {
+    const fetchLibraries = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get('libraries/libraries/');
+        const data = Array.isArray(res.data) ? res.data : res.data.results || [];
+        setLibraries(data);
+      } catch (err) {
+        setError(err.message || 'Xatolik');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLibraries();
+  }, []);
+
+  const filtered = libraries
+    .filter(lib => lib.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      (!onlyWithBooks || (lib.books && lib.books > 0)))
     .sort((a, b) => {
       if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
       if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
-      if (sortBy === 'books-asc') return a.books - b.books;
-      if (sortBy === 'books-desc') return b.books - a.books;
+      if (sortBy === 'books-asc') return (a.books || 0) - (b.books || 0);
+      if (sortBy === 'books-desc') return (b.books || 0) - (a.books || 0);
       return 0;
     });
 
   const bgColor = isDark ? '#1a1b1e' : '#f5f5f5';
   const cardBg = isDark ? '#25262b' : 'white';
   const textColor = isDark ? 'white' : '#333';
-  const dimTextColor = isDark ? 'gray.4' : 'dimmed';
+  const dimText = isDark ? 'gray.4' : 'dimmed';
 
   return (
     <Box bg={bgColor} mih="100vh" py={40}>
@@ -88,18 +80,23 @@ const Kutubxonalar = () => {
                   <IconArrowsSort size={20} color="#0ea5e9" />
                   <Text fw={600} size="sm">Saralash</Text>
                 </Group>
-
-                <Stack spacing={8}>
-                  <Button variant={sortBy === 'name-asc' ? 'filled' : 'light'} fullWidth justify="flex-start" onClick={() => setSortBy('name-asc')} radius="md" color="cyan">Nomi (A-Z)</Button>
-                  <Button variant={sortBy === 'name-desc' ? 'filled' : 'light'} fullWidth justify="flex-start" onClick={() => setSortBy('name-desc')} radius="md" color="cyan">Nomi (Z-A)</Button>
-                  <Button variant={sortBy === 'books-desc' ? 'filled' : 'light'} fullWidth justify="flex-start" onClick={() => setSortBy('books-desc')} radius="md" color="cyan">Kitoblar soni (kamdan ko'p)</Button>
-                  <Button variant={sortBy === 'books-asc' ? 'filled' : 'light'} fullWidth justify="flex-start" onClick={() => setSortBy('books-asc')} radius="md" color="cyan">Kitoblar soni (ko'p dan kam)</Button>
+                <Stack spacing="8px">
+                  <Button variant={sortBy === 'name-asc' ? 'filled' : 'light'} fullWidth radius="md" color="cyan" onClick={() => setSortBy('name-asc')}>
+                    Nomi (A‑Z)
+                  </Button>
+                  <Button variant={sortBy === 'name-desc' ? 'filled' : 'light'} fullWidth radius="md" color="cyan" onClick={() => setSortBy('name-desc')}>
+                    Nomi (Z‑A)
+                  </Button>
+                  <Button variant={sortBy === 'books-desc' ? 'filled' : 'light'} fullWidth radius="md" color="cyan" onClick={() => setSortBy('books-desc')}>
+                    Kitoblar (kam→ko‘p)
+                  </Button>
+                  <Button variant={sortBy === 'books-asc' ? 'filled' : 'light'} fullWidth radius="md" color="cyan" onClick={() => setSortBy('books-asc')}>
+                    Kitoblar (ko‘p→kam)
+                  </Button>
                 </Stack>
-
                 <Divider />
-
-                <Button variant={onlyWithBooks ? 'filled' : 'light'} fullWidth justify="space-between" onClick={() => setOnlyWithBooks(!onlyWithBooks)} radius="md" color="cyan" rightSection={onlyWithBooks ? <IconCheck size={16} /> : null}>
-                  Faqat kitoblari mavjudlar
+                <Button variant={onlyWithBooks ? 'filled' : 'light'} fullWidth radius="md" color="cyan" onClick={() => setOnlyWithBooks(!onlyWithBooks)} rightSection={onlyWithBooks ? <IconCheck size={16} /> : null}>
+                  Faqat kitoblari mavjud
                 </Button>
               </Stack>
             </Paper>
@@ -109,7 +106,7 @@ const Kutubxonalar = () => {
             <Stack spacing="lg">
               <Flex gap="md">
                 <TextInput
-                  placeholder="Qidirish (nomi bo'yicha)..."
+                  placeholder="Qidirish (nom bo‘yicha)..."
                   size="md"
                   radius="md"
                   leftSection={<IconSearch size={18} />}
@@ -127,52 +124,55 @@ const Kutubxonalar = () => {
                 </Group>
               </Flex>
 
-              {viewMode === 'grid' ? (
+              {error && <Text c="red" ta="center">Xatolik: {error}</Text>}
+
+              {loading ? (
                 <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
-                  {sortedKutubxonalar.map((k) => (
-                    <Card key={k.id} shadow="sm" padding="lg" radius="md" bg={cardBg}>
+                  {[1,2,3,4].map(i => (
+                    <Card key={i} shadow="sm" padding="lg" radius="md" bg={cardBg}>
+                      <Skeleton height={180} mb="md" />
+                      <Skeleton height={20} width="60%" mb="sm" />
+                      <Skeleton height={16} width="40%" />
+                    </Card>
+                  ))}
+                </SimpleGrid>
+              ) : viewMode === 'grid' ? (
+                <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+                  {filtered.map(lib => (
+                    <Card key={lib.id} shadow="sm" padding="lg" radius="md" bg={cardBg}>
                       <Card.Section>
-                        <Box
-                          h={200}
-                          style={{
-                            backgroundImage: `url(${k.image})`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            position: 'relative'
-                          }}
-                        >
-                          {k.books > 0 && <Badge color="green" variant="filled" style={{ position: 'absolute', top: 10, right: 10 }}>Faol</Badge>}
+                        <Box h={200} style={{ backgroundImage: `url(${BOOK_IMAGE})`, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative' }}>
+                          {lib.books > 0 && <Badge color="green" variant="filled" style={{ position: 'absolute', top: 10, right: 10 }}>Faol</Badge>}
                         </Box>
                       </Card.Section>
-
                       <Stack spacing="xs" mt="md">
-                        <Text fw={600} size="lg" c={textColor}>{k.name}</Text>
-                        <Group spacing={6}><IconBook size={16} color="#0ea5e9" /><Text size="sm" c={dimTextColor}>{k.books} Kitob</Text></Group>
-                        <Group spacing={6}><IconPhone size={16} color="#0ea5e9" /><Text size="sm" c={dimTextColor}>{k.phone}</Text></Group>
-                        <Group spacing={6}><IconBrandTelegram size={16} color="#0ea5e9" /><Text size="sm" c={dimTextColor}>{k.telegram}</Text></Group>
-                        <Group spacing={6}><IconMapPin size={16} color="#0ea5e9" /><Text size="sm" c="#0ea5e9" style={{ cursor: 'pointer' }}>{k.location}</Text></Group>
+                        <Text fw={600} size="lg" c={textColor}>{lib.name}</Text>
+                        <Group spacing={6}><IconBook size={16} color="#0ea5e9" /><Text size="sm" c={dimText}>{lib.books || 0} Kitob</Text></Group>
+                        {lib.phone && <Group spacing={6}><IconPhone size={16} color="#0ea5e9" /><Text size="sm" c={dimText}>{lib.phone}</Text></Group>}
+                        {lib.telegram && <Group spacing={6}><IconBrandTelegram size={16} color="#0ea5e9" /><Text size="sm" c={dimText}>{lib.telegram}</Text></Group>}
+                        {lib.location && <Group spacing={6}><IconMapPin size={16} color="#0ea5e9" /><Text size="sm" c="#0ea5e9" style={{ cursor: 'pointer' }}>{lib.location}</Text></Group>}
                       </Stack>
                     </Card>
                   ))}
                 </SimpleGrid>
               ) : (
                 <Stack spacing="md">
-                  {sortedKutubxonalar.map((k) => (
-                    <Card key={k.id} shadow="sm" padding="lg" radius="md" bg={cardBg}>
+                  {filtered.map(lib => (
+                    <Card key={lib.id} shadow="sm" padding="lg" radius="md" bg={cardBg}>
                       <Flex gap="lg" align="center">
-                        <Box w={150} h={100} style={{ backgroundImage: `url(${k.image})`, backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 8, flexShrink: 0 }} />
+                        <Box w={150} h={100} style={{ backgroundImage: `url(${BOOK_IMAGE})`, backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 8, flexShrink: 0 }} />
                         <Box style={{ flex: 1 }}>
                           <Flex justify="space-between" align="start">
                             <Box>
-                              <Text fw={600} size="lg" mb={8} c={textColor}>{k.name}</Text>
+                              <Text fw={600} size="lg" mb={8} c={textColor}>{lib.name}</Text>
                               <Group spacing={20}>
-                                <Group spacing={6}><IconBook size={16} color="#0ea5e9" /><Text size="sm" c={dimTextColor}>{k.books} Kitob</Text></Group>
-                                <Group spacing={6}><IconPhone size={16} color="#0ea5e9" /><Text size="sm" c={dimTextColor}>{k.phone}</Text></Group>
-                                <Group spacing={6}><IconBrandTelegram size={16} color="#0ea5e9" /><Text size="sm" c={dimTextColor}>{k.telegram}</Text></Group>
-                                <Group spacing={6}><IconMapPin size={16} color="#0ea5e9" /><Text size="sm" c="#0ea5e9" style={{ cursor: 'pointer' }}>{k.location}</Text></Group>
+                                <Group spacing={6}><IconBook size={16} color="#0ea5e9" /><Text size="sm" c={dimText}>{lib.books || 0} Kitob</Text></Group>
+                                {lib.phone && <Group spacing={6}><IconPhone size={16} color="#0ea5e9" /><Text size="sm" c={dimText}>{lib.phone}</Text></Group>}
+                                {lib.telegram && <Group spacing={6}><IconBrandTelegram size={16} color="#0ea5e9" /><Text size="sm" c={dimText}>{lib.telegram}</Text></Group>}
+                                {lib.location && <Group spacing={6}><IconMapPin size={16} color="#0ea5e9" /><Text size="sm" c="#0ea5e9" style={{ cursor: 'pointer' }}>{lib.location}</Text></Group>}
                               </Group>
                             </Box>
-                            {k.books > 0 && <Badge color="green" variant="filled">Faol</Badge>}
+                            {lib.books > 0 && <Badge color="green" variant="filled">Faol</Badge>}
                           </Flex>
                         </Box>
                       </Flex>
@@ -181,9 +181,9 @@ const Kutubxonalar = () => {
                 </Stack>
               )}
 
-              {sortedKutubxonalar.length === 0 && (
+              {!loading && filtered.length === 0 && (
                 <Paper p={60} radius="md" ta="center" bg={cardBg}>
-                  <Text size="lg" c={dimTextColor}>Hech qanday kutubxona topilmadi</Text>
+                  <Text size="lg" c={dimText}>Hech qanday kutubxona topilmadi</Text>
                 </Paper>
               )}
             </Stack>

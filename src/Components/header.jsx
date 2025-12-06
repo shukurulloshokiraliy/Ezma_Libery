@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Group, Button } from '@mantine/core';
 import { NavLink } from 'react-router-dom';
 
+// LOGO FILES
+import light_logo from '../assets/images/logo-smart.svg';
+import dark_logo from '../assets/images/logo1.png';
+
 const Header = () => {
   const [isDark, setIsDark] = useState(false);
 
@@ -20,83 +24,117 @@ const Header = () => {
   return (
     <header
       style={{
-        height: "70px",
+        height: "80px",
         padding: "0 48px",
-        borderBottom: `1px solid ${isDark ? '#373a40' : '#e0e0e0'}`,
-        backgroundColor: isDark ? "#1a1b1e" : "#ffffff",
+        background: isDark 
+          ? "linear-gradient(90deg, #1a1d29 0%, #2d1f3f 50%, #1a1d29 100%)"
+          : "linear-gradient(90deg, #c17d11 0%, #d4a11e 50%, #c17d11 100%)",
         display: "flex",
         alignItems: "center",
-        transition: "0.3s"
+        transition: "background 0.3s ease",
+        position: "relative",
+        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)"
       }}
     >
       <Group style={{ width: "100%", justifyContent: "space-between" }}>
+    
         <Group>
           <NavLink to="/" style={{ textDecoration: 'none' }}>
             <img 
-              src={isDark 
-                ? "https://ezma-client.vercel.app/assets/ezma-dark-Bt8MX4wU.svg" 
-                : "https://ezma-client.vercel.app/assets/ezma-light-D6Z9QF3F.svg"
-              } 
+              src={isDark ? light_logo : dark_logo}
               alt="Ezma"
-              style={{ width: 120 }} 
+              style={{ 
+                width: 80,
+                filter: isDark ? 'brightness(1.2)' : 'brightness(1)'
+              }}
             />
           </NavLink>
         </Group>
 
         <Group gap="lg">
-          <NavLink 
-            to="/" 
-            style={{ textDecoration: 'none' }}
-          >
+          <NavLink to="/" style={{ textDecoration: 'none' }}>
             {({ isActive }) => (
-              <Button 
-                variant={isActive ? "light" : "subtle"}
-                color={isActive ? "blue" : (isDark ? 'gray.4' : 'gray')}
-                style={{ 
-                  fontWeight: isActive ? 600 : 400,
+              <Button
+                variant={isActive ? "filled" : "subtle"}
+                color={isActive ? "yellow" : undefined}
+                style={{
+                  fontWeight: isActive ? 600 : 500,
                   color: isActive 
-                    ? undefined 
-                    : (isDark ? '#fff' : '#000')
+                    ? (isDark ? '#1a1d29' : '#000') 
+                    : (isDark ? '#ffffff' : '#ffffff'),
+                  backgroundColor: isActive 
+                    ? (isDark ? '#ffd43b' : '#fff') 
+                    : 'transparent',
+                  transition: 'all 0.2s ease'
+                }}
+                styles={{
+                  root: {
+                    '&:hover': {
+                      backgroundColor: isActive 
+                        ? undefined 
+                        : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)')
+                    }
+                  }
                 }}
               >
                 Bosh sahifa
               </Button>
             )}
           </NavLink>
-          
-          <NavLink 
-            to="/kitob" 
-            style={{ textDecoration: 'none' }}
-          >
+
+          <NavLink to="/kitob" style={{ textDecoration: 'none' }}>
             {({ isActive }) => (
-              <Button 
-                variant={isActive ? "light" : "subtle"}
-                color={isActive ? "blue" : (isDark ? 'gray.4' : 'gray')}
-                style={{ 
-                  fontWeight: isActive ? 600 : 400,
+              <Button
+                variant={isActive ? "filled" : "subtle"}
+                color={isActive ? "yellow" : undefined}
+                style={{
+                  fontWeight: isActive ? 600 : 500,
                   color: isActive 
-                    ? undefined 
-                    : (isDark ? '#fff' : '#000')
+                    ? (isDark ? '#1a1d29' : '#000') 
+                    : (isDark ? '#ffffff' : '#ffffff'),
+                  backgroundColor: isActive 
+                    ? (isDark ? '#ffd43b' : '#fff') 
+                    : 'transparent',
+                  transition: 'all 0.2s ease'
+                }}
+                styles={{
+                  root: {
+                    '&:hover': {
+                      backgroundColor: isActive 
+                        ? undefined 
+                        : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)')
+                    }
+                  }
                 }}
               >
                 Kitoblar
               </Button>
             )}
           </NavLink>
-          
-          <NavLink 
-            to="/kutubxona" 
-            style={{ textDecoration: 'none' }}
-          >
+
+          <NavLink to="/kutubxona" style={{ textDecoration: 'none' }}>
             {({ isActive }) => (
-              <Button 
-                variant={isActive ? "light" : "subtle"}
-                color={isActive ? "blue" : (isDark ? 'gray.4' : 'gray')}
-                style={{ 
-                  fontWeight: isActive ? 600 : 400,
+              <Button
+                variant={isActive ? "filled" : "subtle"}
+                color={isActive ? "yellow" : undefined}
+                style={{
+                  fontWeight: isActive ? 600 : 500,
                   color: isActive 
-                    ? undefined 
-                    : (isDark ? '#fff' : '#000')
+                    ? (isDark ? '#1a1d29' : '#000') 
+                    : (isDark ? '#ffffff' : '#ffffff'),
+                  backgroundColor: isActive 
+                    ? (isDark ? '#ffd43b' : '#fff') 
+                    : 'transparent',
+                  transition: 'all 0.2s ease'
+                }}
+                styles={{
+                  root: {
+                    '&:hover': {
+                      backgroundColor: isActive 
+                        ? undefined 
+                        : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)')
+                    }
+                  }
                 }}
               >
                 Kutubxonalar
@@ -113,7 +151,7 @@ const Header = () => {
               height: 26,
               borderRadius: 13,
               border: "none",
-              backgroundColor: isDark ? "#373a40" : "#e9ecef",
+              backgroundColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.3)",
               position: "relative",
               cursor: "pointer",
               transition: "0.3s"
@@ -132,18 +170,38 @@ const Header = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 13
+                fontSize: 13,
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)"
               }}
             >
               {isDark ? "🌙" : "☀️"}
             </div>
           </button>
-              <NavLink to="/login" style={{ textDecoration: 'none' }}>
-              <Button variant="filled" radius="md">
-            Kutubxonachi bo'lish
-          </Button>
-              </NavLink>
-          
+
+          <NavLink to="/login" style={{ textDecoration: 'none' }}>
+            <Button 
+              variant="filled" 
+              radius="md"
+              style={{
+                backgroundColor: isDark ? '#ffd43b' : '#fff',
+                color: isDark ? '#1a1d29' : '#c17d11',
+                fontWeight: 600,
+                border: 'none',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+                transition: 'all 0.2s ease'
+              }}
+              styles={{
+                root: {
+                  '&:hover': {
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                  }
+                }
+              }}
+            >
+              Kutubxonachi bo'lish
+            </Button>
+          </NavLink>
         </Group>
       </Group>
     </header>

@@ -1,196 +1,190 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Container, Box, Text, SimpleGrid, Paper, Group, Button,
-  TextInput, Stack, Flex, Card, Badge, ActionIcon, Divider, Skeleton
+  TextInput, Stack, Flex, Card, Badge, ActionIcon, Divider, Skeleton, MantineProvider, Title
 } from '@mantine/core';
 import { 
   IconSearch, IconMapPin, IconBook, IconPhone,
-  IconBrandTelegram, IconArrowsSort, IconGrid3x3, IconList, IconCheck
+  IconBrandTelegram, IconArrowsSort, IconGrid3x3, IconList, IconCheck, IconArrowLeft, IconUser, IconCalendar
 } from '@tabler/icons-react';
-import axios from 'axios';
-
-const api = axios.create({
-  baseURL: 'https://org-ave-jimmy-learners.trycloudflare.com/api/v1/',
-});
 
 const BOOK_IMAGE = 'https://ezma-client.vercel.app/assets/library-CY0z204p.webp';
 
+// Detail Component
+const DetailLibrary = ({ libraryId, onBack, isDark }) => {
+  const [library, setLibrary] = useState(null);
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`https://org-ave-jimmy-learners.trycloudflare.com/api/v1/libraries/libraries/${libraryId}/`);
+        const libData = await res.json();
+        setLibrary(libData);
+        
+        const booksRes = await fetch(`https://org-ave-jimmy-learners.trycloudflare.com/api/v1/libraries/books/?library=${libraryId}`);
+        const booksData = await booksRes.json();
+        setBooks(Array.isArray(booksData) ? booksData : booksData.results || []);
+        setLoading(false);
+      } catch (err) {
+        setLoading(false);
+      }
+    };
+    if (libraryId) fetchData();
+  }, [libraryId]);
+
+  if (loading) {
+    return (
+      <Box style={{ minHeight: '100vh', background: isDark ? 'linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)' : 'linear-gradient(180deg, #c17d11 0%, #d4a11e 100%)', padding: '40px 0' }}>
+        <Container size="xl"><Skeleton height={300} radius="xl" mb="xl" /></Container>
+      </Box>
+    );
+  }
+
+  return (
+    <Box style={{ minHeight: '100vh', background: isDark ? 'linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)' : 'linear-gradient(180deg, #c17d11 0%, #d4a11e 100%)', padding: '40px 0', position: 'relative' }}>
+      <Container size="xl">
+        <Button leftSection={<IconArrowLeft size={18} />} size="md" radius="md" mb={30} onClick={onBack} style={{ background: isDark ? 'rgba(26, 27, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)', color: isDark ? '#d4a11e' : '#c17d11' }}>Orqaga</Button>
+        
+        <Paper p={40} radius="xl" mb={40} style={{ background: isDark ? 'rgba(26, 27, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)' }}>
+          <Flex gap={40} direction={{ base: 'column', md: 'row' }}>
+            <Box w={{ base: '100%', md: 300 }} h={300} style={{ backgroundImage: `url(${BOOK_IMAGE})`, backgroundSize: 'cover', borderRadius: 20, position: 'relative' }}>
+              {library?.books > 0 && <Badge size="lg" style={{ position: 'absolute', top: 15, right: 15, background: 'linear-gradient(180deg, #c17d11 0%, #d4a11e 100%)' }}>Faol</Badge>}
+            </Box>
+            <Stack gap="md" style={{ flex: 1 }}>
+              <Title order={1} size={42} style={{ color: isDark ? 'white' : '#2D3748' }}>{library?.name}</Title>
+              <Group gap={20}><Group gap={8}><IconBook size={24} color={isDark ? '#d4a11e' : '#c17d11'} /><Text size="lg" fw={600} style={{ color: isDark ? '#d4a11e' : '#c17d11' }}>{library?.books || 0} Kitob</Text></Group></Group>
+              <Divider />
+              <Stack gap="sm">
+                {library?.phone && <Group gap={12}><IconPhone size={20} color={isDark ? '#d4a11e' : '#c17d11'} /><Text size="md" style={{ color: isDark ? '#e2e8f0' : '#4A5568' }}>{library.phone}</Text></Group>}
+                {library?.telegram && <Group gap={12}><IconBrandTelegram size={20} color={isDark ? '#d4a11e' : '#c17d11'} /><Text size="md" style={{ color: isDark ? '#e2e8f0' : '#4A5568' }}>{library.telegram}</Text></Group>}
+                {library?.location && <Group gap={12}><IconMapPin size={20} color={isDark ? '#d4a11e' : '#c17d11'} /><Text size="md" style={{ color: isDark ? '#d4a11e' : '#c17d11', cursor: 'pointer' }}>{library.location}</Text></Group>}
+              </Stack>
+            </Stack>
+          </Flex>
+        </Paper>
+
+        <Title order={2} size={32} mb={30} style={{ color: 'white' }}>Kitoblar ({books.length})</Title>
+        <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="lg">
+          {books.map(book => (
+            <Card key={book.id} padding="lg" radius="xl" style={{ background: isDark ? 'rgba(26, 27, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)' }}>
+              <Card.Section><Box h={250} style={{ backgroundImage: book.image ? `url(${book.image})` : `url(${BOOK_IMAGE})`, backgroundSize: 'cover' }} /></Card.Section>
+              <Stack gap="xs" mt="md">
+                <Text fw={600} size="md" lineClamp={2} style={{ color: isDark ? 'white' : '#2D3748', minHeight: 44 }}>{book.title || book.name}</Text>
+                {book.author && <Group gap={6}><IconUser size={16} color={isDark ? '#d4a11e' : '#c17d11'} /><Text size="sm" style={{ color: '#718096' }}>{book.author}</Text></Group>}
+              </Stack>
+            </Card>
+          ))}
+        </SimpleGrid>
+      </Container>
+    </Box>
+  );
+};
+
+// Main Component
 const Kutubxonalar = () => {
   const [isDark, setIsDark] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('name-asc');
   const [viewMode, setViewMode] = useState('grid');
-  const [onlyWithBooks, setOnlyWithBooks] = useState(false);
   const [libraries, setLibraries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [selectedLibraryId, setSelectedLibraryId] = useState(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('darkMode');
     if (saved) setIsDark(saved === 'true');
-    const handleDarkModeChange = () => setIsDark(localStorage.getItem('darkMode') === 'true');
-    window.addEventListener('darkModeChange', handleDarkModeChange);
-    return () => window.removeEventListener('darkModeChange', handleDarkModeChange);
+    const handleChange = () => setIsDark(localStorage.getItem('darkMode') === 'true');
+    window.addEventListener('darkModeChange', handleChange);
+    return () => window.removeEventListener('darkModeChange', handleChange);
   }, []);
 
   useEffect(() => {
     const fetchLibraries = async () => {
       try {
-        setLoading(true);
-        const res = await api.get('libraries/libraries/');
-        const data = Array.isArray(res.data) ? res.data : res.data.results || [];
-        setLibraries(data);
+        const res = await fetch('https://org-ave-jimmy-learners.trycloudflare.com/api/v1/libraries/libraries/');
+        const data = await res.json();
+        setLibraries(Array.isArray(data) ? data : data.results || []);
+        setLoading(false);
       } catch (err) {
-        setError(err.message || 'Xatolik');
-      } finally {
         setLoading(false);
       }
     };
     fetchLibraries();
   }, []);
 
-  const filtered = libraries
-    .filter(lib => lib.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      (!onlyWithBooks || (lib.books && lib.books > 0)))
-    .sort((a, b) => {
-      if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
-      if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
-      if (sortBy === 'books-asc') return (a.books || 0) - (b.books || 0);
-      if (sortBy === 'books-desc') return (b.books || 0) - (a.books || 0);
-      return 0;
-    });
+  const filtered = libraries.filter(lib => lib.name.toLowerCase().includes(searchQuery.toLowerCase())).sort((a, b) => {
+    if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
+    if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
+    return 0;
+  });
 
-  const bgColor = isDark ? '#1a1b1e' : '#f5f5f5';
-  const cardBg = isDark ? '#25262b' : 'white';
-  const textColor = isDark ? 'white' : '#333';
-  const dimText = isDark ? 'gray.4' : 'dimmed';
+  if (selectedLibraryId) {
+    return <MantineProvider><DetailLibrary libraryId={selectedLibraryId} onBack={() => setSelectedLibraryId(null)} isDark={isDark} /></MantineProvider>;
+  }
 
   return (
-    <Box bg={bgColor} mih="100vh" py={40}>
-      <Container size="xl">
-        <Text size="32px" fw={700} ta="center" mb={40} c={textColor}>
-          Kutubxonalar ro'yxati
-        </Text>
-
-        <Flex gap={20} align="flex-start">
-          <Box w={280} style={{ flexShrink: 0 }}>
-            <Paper p={20} radius="md" bg={cardBg}>
-              <Stack spacing="md">
-                <Group spacing={8}>
-                  <IconArrowsSort size={20} color="#0ea5e9" />
-                  <Text fw={600} size="sm">Saralash</Text>
-                </Group>
-                <Stack spacing="8px">
-                  <Button variant={sortBy === 'name-asc' ? 'filled' : 'light'} fullWidth radius="md" color="cyan" onClick={() => setSortBy('name-asc')}>
-                    Nomi (A‑Z)
-                  </Button>
-                  <Button variant={sortBy === 'name-desc' ? 'filled' : 'light'} fullWidth radius="md" color="cyan" onClick={() => setSortBy('name-desc')}>
-                    Nomi (Z‑A)
-                  </Button>
-                  <Button variant={sortBy === 'books-desc' ? 'filled' : 'light'} fullWidth radius="md" color="cyan" onClick={() => setSortBy('books-desc')}>
-                    Kitoblar (kam→ko‘p)
-                  </Button>
-                  <Button variant={sortBy === 'books-asc' ? 'filled' : 'light'} fullWidth radius="md" color="cyan" onClick={() => setSortBy('books-asc')}>
-                    Kitoblar (ko‘p→kam)
-                  </Button>
+    <MantineProvider>
+      <Box style={{ minHeight: '100vh', background: isDark ? 'linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)' : 'linear-gradient(180deg, #c17d11 0%, #d4a11e 100%)', padding: '40px 0' }}>
+        <Container size="xl">
+          <Text size="42px" fw={800} ta="center" mb={40} style={{ color: 'white' }}>Kutubxonalar</Text>
+          
+          <Flex gap={20} align="flex-start">
+            <Box w={280}>
+              <Paper p={20} radius="xl" style={{ background: isDark ? 'rgba(26, 27, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)' }}>
+                <Stack gap="md">
+                  <Group gap={8}><IconArrowsSort size={20} color={isDark ? '#d4a11e' : '#c17d11'} /><Text fw={600} size="sm" style={{ color: isDark ? 'white' : '#2D3748' }}>Saralash</Text></Group>
+                  <Stack gap={8}>
+                    {['name-asc', 'name-desc'].map(sort => (
+                      <Button key={sort} fullWidth radius="md" onClick={() => setSortBy(sort)} style={{ background: sortBy === sort ? 'linear-gradient(180deg, #c17d11 0%, #d4a11e 100%)' : isDark ? 'rgba(255, 255, 255, 0.05)' : 'transparent', color: sortBy === sort ? 'white' : isDark ? '#d4a11e' : '#c17d11' }}>
+                        {sort === 'name-asc' ? 'Nomi (A‑Z)' : 'Nomi (Z‑A)'}
+                      </Button>
+                    ))}
+                  </Stack>
                 </Stack>
-                <Divider />
-                <Button variant={onlyWithBooks ? 'filled' : 'light'} fullWidth radius="md" color="cyan" onClick={() => setOnlyWithBooks(!onlyWithBooks)} rightSection={onlyWithBooks ? <IconCheck size={16} /> : null}>
-                  Faqat kitoblari mavjud
-                </Button>
+              </Paper>
+            </Box>
+
+            <Box style={{ flex: 1 }}>
+              <Stack gap="lg">
+                <Flex gap="md">
+                  <Box style={{ flex: 1, background: isDark ? 'rgba(26, 27, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)', borderRadius: 16, padding: 8 }}>
+                    <TextInput placeholder="Qidirish..." leftSection={<IconSearch size={18} color={isDark ? '#d4a11e' : '#c17d11'} />} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} styles={{ input: { border: 'none', background: 'transparent', color: isDark ? 'white' : '#2D3748' } }} />
+                  </Box>
+                  <Group gap={8}>
+                    {['grid', 'list'].map(mode => (
+                      <ActionIcon key={mode} size={42} radius="md" onClick={() => setViewMode(mode)} style={{ background: viewMode === mode ? 'linear-gradient(180deg, #c17d11 0%, #d4a11e 100%)' : isDark ? 'rgba(26, 27, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)', color: viewMode === mode ? 'white' : isDark ? '#d4a11e' : '#c17d11' }}>
+                        {mode === 'grid' ? <IconGrid3x3 size={20} /> : <IconList size={20} />}
+                      </ActionIcon>
+                    ))}
+                  </Group>
+                </Flex>
+
+                {loading ? (
+                  <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+                    {[1,2,3,4].map(i => <Skeleton key={i} height={300} radius="xl" />)}
+                  </SimpleGrid>
+                ) : (
+                  <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+                    {filtered.map(lib => (
+                      <Card key={lib.id} padding="lg" radius="xl" onClick={() => setSelectedLibraryId(lib.id)} style={{ background: isDark ? 'rgba(26, 27, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)', cursor: 'pointer', transition: 'all 0.3s' }} onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-8px)'} onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+                        <Card.Section><Box h={200} style={{ backgroundImage: `url(${BOOK_IMAGE})`, backgroundSize: 'cover', position: 'relative' }}>{lib.books > 0 && <Badge style={{ position: 'absolute', top: 10, right: 10, background: 'linear-gradient(180deg, #c17d11 0%, #d4a11e 100%)' }}>Faol</Badge>}</Box></Card.Section>
+                        <Stack gap="xs" mt="md">
+                          <Text fw={600} size="lg" style={{ color: isDark ? 'white' : '#2D3748' }}>{lib.name}</Text>
+                          <Group gap={6}><IconBook size={16} color={isDark ? '#d4a11e' : '#c17d11'} /><Text size="sm" style={{ color: '#718096' }}>{lib.books || 0} Kitob</Text></Group>
+                          {lib.phone && <Group gap={6}><IconPhone size={16} color={isDark ? '#d4a11e' : '#c17d11'} /><Text size="sm" style={{ color: '#718096' }}>{lib.phone}</Text></Group>}
+                        </Stack>
+                      </Card>
+                    ))}
+                  </SimpleGrid>
+                )}
               </Stack>
-            </Paper>
-          </Box>
-
-          <Box style={{ flex: 1 }}>
-            <Stack spacing="lg">
-              <Flex gap="md">
-                <TextInput
-                  placeholder="Qidirish (nom bo‘yicha)..."
-                  size="md"
-                  radius="md"
-                  leftSection={<IconSearch size={18} />}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{ flex: 1, backgroundColor: cardBg, color: textColor }}
-                />
-                <Group spacing={8}>
-                  <ActionIcon size={42} variant={viewMode === 'grid' ? 'filled' : 'light'} color="cyan" onClick={() => setViewMode('grid')} radius="md">
-                    <IconGrid3x3 size={20} />
-                  </ActionIcon>
-                  <ActionIcon size={42} variant={viewMode === 'list' ? 'filled' : 'light'} color="cyan" onClick={() => setViewMode('list')} radius="md">
-                    <IconList size={20} />
-                  </ActionIcon>
-                </Group>
-              </Flex>
-
-              {error && <Text c="red" ta="center">Xatolik: {error}</Text>}
-
-              {loading ? (
-                <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
-                  {[1,2,3,4].map(i => (
-                    <Card key={i} shadow="sm" padding="lg" radius="md" bg={cardBg}>
-                      <Skeleton height={180} mb="md" />
-                      <Skeleton height={20} width="60%" mb="sm" />
-                      <Skeleton height={16} width="40%" />
-                    </Card>
-                  ))}
-                </SimpleGrid>
-              ) : viewMode === 'grid' ? (
-                <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
-                  {filtered.map(lib => (
-                    <Card key={lib.id} shadow="sm" padding="lg" radius="md" bg={cardBg}>
-                      <Card.Section>
-                        <Box h={200} style={{ backgroundImage: `url(${BOOK_IMAGE})`, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative' }}>
-                          {lib.books > 0 && <Badge color="green" variant="filled" style={{ position: 'absolute', top: 10, right: 10 }}>Faol</Badge>}
-                        </Box>
-                      </Card.Section>
-                      <Stack spacing="xs" mt="md">
-                        <Text fw={600} size="lg" c={textColor}>{lib.name}</Text>
-                        <Group spacing={6}><IconBook size={16} color="#0ea5e9" /><Text size="sm" c={dimText}>{lib.books || 0} Kitob</Text></Group>
-                        {lib.phone && <Group spacing={6}><IconPhone size={16} color="#0ea5e9" /><Text size="sm" c={dimText}>{lib.phone}</Text></Group>}
-                        {lib.telegram && <Group spacing={6}><IconBrandTelegram size={16} color="#0ea5e9" /><Text size="sm" c={dimText}>{lib.telegram}</Text></Group>}
-                        {lib.location && <Group spacing={6}><IconMapPin size={16} color="#0ea5e9" /><Text size="sm" c="#0ea5e9" style={{ cursor: 'pointer' }}>{lib.location}</Text></Group>}
-                      </Stack>
-                    </Card>
-                  ))}
-                </SimpleGrid>
-              ) : (
-                <Stack spacing="md">
-                  {filtered.map(lib => (
-                    <Card key={lib.id} shadow="sm" padding="lg" radius="md" bg={cardBg}>
-                      <Flex gap="lg" align="center">
-                        <Box w={150} h={100} style={{ backgroundImage: `url(${BOOK_IMAGE})`, backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 8, flexShrink: 0 }} />
-                        <Box style={{ flex: 1 }}>
-                          <Flex justify="space-between" align="start">
-                            <Box>
-                              <Text fw={600} size="lg" mb={8} c={textColor}>{lib.name}</Text>
-                              <Group spacing={20}>
-                                <Group spacing={6}><IconBook size={16} color="#0ea5e9" /><Text size="sm" c={dimText}>{lib.books || 0} Kitob</Text></Group>
-                                {lib.phone && <Group spacing={6}><IconPhone size={16} color="#0ea5e9" /><Text size="sm" c={dimText}>{lib.phone}</Text></Group>}
-                                {lib.telegram && <Group spacing={6}><IconBrandTelegram size={16} color="#0ea5e9" /><Text size="sm" c={dimText}>{lib.telegram}</Text></Group>}
-                                {lib.location && <Group spacing={6}><IconMapPin size={16} color="#0ea5e9" /><Text size="sm" c="#0ea5e9" style={{ cursor: 'pointer' }}>{lib.location}</Text></Group>}
-                              </Group>
-                            </Box>
-                            {lib.books > 0 && <Badge color="green" variant="filled">Faol</Badge>}
-                          </Flex>
-                        </Box>
-                      </Flex>
-                    </Card>
-                  ))}
-                </Stack>
-              )}
-
-              {!loading && filtered.length === 0 && (
-                <Paper p={60} radius="md" ta="center" bg={cardBg}>
-                  <Text size="lg" c={dimText}>Hech qanday kutubxona topilmadi</Text>
-                </Paper>
-              )}
-            </Stack>
-          </Box>
-        </Flex>
-      </Container>
-    </Box>
+            </Box>
+          </Flex>
+        </Container>
+      </Box>
+    </MantineProvider>
   );
 };
 

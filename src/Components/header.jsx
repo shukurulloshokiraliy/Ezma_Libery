@@ -3,7 +3,7 @@ import { Group, Button } from '@mantine/core';
 import { NavLink } from 'react-router-dom';
 import { IconLogout } from '@tabler/icons-react';
 
-// LOGO FILES
+
 import light_logo from '../assets/images/logo-smart.svg';
 import dark_logo from '../assets/images/logo1.png';
 
@@ -11,7 +11,7 @@ const Header = () => {
   const [isDark, setIsDark] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Dark mode va login holatini localStorage orqali olish
+  
   useEffect(() => {
     const savedDark = localStorage.getItem('darkMode');
     if (savedDark) setIsDark(savedDark === 'true');
@@ -87,7 +87,7 @@ const Header = () => {
         </Group>
 
         <Group gap="sm">
-          {/* Dark mode toggle */}
+    
           <button
             onClick={toggleDark}
             style={{
@@ -122,7 +122,7 @@ const Header = () => {
             </div>
           </button>
 
-          {/* Login bo‘lsa — CHIQISH | bo‘lmasa — KIRISH */}
+         
           {isLoggedIn ? (
             <Button
               leftIcon={<IconLogout size={18} />}

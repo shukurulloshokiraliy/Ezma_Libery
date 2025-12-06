@@ -56,24 +56,24 @@ const DetailBook = ({ bookId, onBack }) => {
       setLibraries([]);
 
       try {
-        // bookId'dan faqat raqamni olish va tozalash
+      
         let cleanBookId = String(bookId);
         
         console.log('Step 1 - Original:', cleanBookId);
         
-        // Agar "books/13" yoki "13/:1" formatida kelsa, faqat raqamni ajratib olish
+  
         if (cleanBookId.includes('/')) {
-          cleanBookId = cleanBookId.split('/').pop(); // Oxirgi qismni olish
+          cleanBookId = cleanBookId.split('/').pop();
           console.log('Step 2 - After split by /:', cleanBookId);
         }
         
         if (cleanBookId.includes(':')) {
-          cleanBookId = cleanBookId.split(':')[0];     // ":" belgisidan oldingi qismni olish
+          cleanBookId = cleanBookId.split(':')[0];   
           console.log('Step 3 - After split by ::', cleanBookId);
         }
         
-        cleanBookId = cleanBookId.trim();             // Bo'sh joylarni olib tashlash
-        cleanBookId = cleanBookId.replace(/[^0-9]/g, ''); // Faqat raqamlarni qoldirish
+        cleanBookId = cleanBookId.trim();            
+        cleanBookId = cleanBookId.replace(/[^0-9]/g, ''); 
         
         console.log('Final cleaned bookId:', cleanBookId);
         
@@ -81,7 +81,7 @@ const DetailBook = ({ bookId, onBack }) => {
           throw new Error('Kitob ID noto\'g\'ri formatda');
         }
         
-        // Kitob ma'lumotlarini olish - to'g'ri endpoint: /books/book/{id}/
+
         const bookUrl = `https://org-ave-jimmy-learners.trycloudflare.com/api/v1/books/book/${cleanBookId}/`;
         console.log('Final URL:', bookUrl);
         
@@ -111,7 +111,6 @@ const DetailBook = ({ bookId, onBack }) => {
 
         setBook(bookData);
 
-        // Kutubxonalar ma'lumotlarini olish
         const libraryIds = Array.isArray(bookData.libraries) ? bookData.libraries : [];
         
         if (libraryIds.length > 0) {
@@ -174,7 +173,6 @@ const DetailBook = ({ bookId, onBack }) => {
     };
   }, [bookId]);
 
-  // Loading ko'rinishi
   if (loading) {
     return (
       <MantineProvider>
@@ -199,7 +197,6 @@ const DetailBook = ({ bookId, onBack }) => {
     );
   }
 
-  // Xatolik ko'rinishi
   if (error) {
     return (
       <MantineProvider>
@@ -288,7 +285,7 @@ const DetailBook = ({ bookId, onBack }) => {
             </Button>
           )}
 
-          {/* Kitob tafsilotlari */}
+      
           <Paper 
             p={0} 
             radius="xl" 
@@ -483,7 +480,6 @@ const DetailBook = ({ bookId, onBack }) => {
             </Flex>
           </Paper>
 
-          {/* Statistikalar */}
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg" mb={40}>
             <Paper 
               p={30} 
@@ -552,7 +548,6 @@ const DetailBook = ({ bookId, onBack }) => {
             </Paper>
           </SimpleGrid>
 
-          {/* Kutubxonalar ro'yxati */}
           {libraries.length > 0 && (
             <Box>
               <Group justify="space-between" align="center" mb={30}>

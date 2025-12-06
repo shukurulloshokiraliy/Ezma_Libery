@@ -1,0 +1,9 @@
+{
+    "rewrites": [
+      {
+        "source": "/api/login",
+        "destination": "https://org-ave-jimmy-learners.trycloudflare.com/api/v1/auth/login/"
+      }
+    ]
+  }
+  

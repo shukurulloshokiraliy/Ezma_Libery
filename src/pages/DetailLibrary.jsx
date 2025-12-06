@@ -184,7 +184,7 @@ const DetailLibrary = ({ libraryId, onBack }) => {
             </Button>
           )}
 
-          {/* Hero Section */}
+       
           <Paper 
             p={0} 
             radius="xl" 
@@ -357,7 +357,6 @@ const DetailLibrary = ({ libraryId, onBack }) => {
             </Flex>
           </Paper>
 
-          {/* Stats Cards */}
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg" mb={40}>
             <Paper 
               p={30} 
@@ -432,7 +431,7 @@ const DetailLibrary = ({ libraryId, onBack }) => {
             </Paper>
           </SimpleGrid>
 
-          {/* Top Categories */}
+       
           {topCategories.length > 0 && (
             <Paper 
               p={30} 
@@ -482,7 +481,6 @@ const DetailLibrary = ({ libraryId, onBack }) => {
             </Paper>
           )}
 
-          {/* Books Section */}
           <Box>
             <Group justify="space-between" align="center" mb={30}>
               <Group gap={10}>

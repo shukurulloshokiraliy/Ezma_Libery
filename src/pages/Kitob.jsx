@@ -321,7 +321,6 @@ const DetailBook = ({ bookId, onBack, isDark, isLoggedIn, onDelete, onUpdate }) 
         )}
       </Container>
 
-      {/* Delete Modal */}
       <Modal opened={deleteModal} onClose={() => setDeleteModal(false)} title="Kitobni o'chirish" centered size="md">
         <Text mb="lg" size="md">
           Siz rostdan ham <strong>"{book.name}"</strong> kitobini o'chirmoqchimisiz? Bu amalni bekor qilib bo'lmaydi.
@@ -464,7 +463,7 @@ const AddBookModal = ({ opened, onClose, onAdd, isDark }) => {
         return;
       }
 
-      // API to'g'ridan-to'g'ri array kutadi
+
       const payload = [
         {
           name: formData.name,
@@ -488,7 +487,7 @@ const AddBookModal = ({ opened, onClose, onAdd, isDark }) => {
       if (res.ok) {
         const responseData = await res.json();
         console.log('Response:', responseData);
-        // Array qaytarsa birinchi elementni olish
+    
         const newBook = Array.isArray(responseData) ? responseData[0] : responseData;
         onAdd(newBook);
         setFormData({
@@ -747,7 +746,6 @@ const Kitob = () => {
   return (
     <MantineProvider>
       <Box style={{ minHeight: '100vh', background: isDark ? 'linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)' : 'linear-gradient(180deg, #c17d11 0%, #d4a11e 100%)', position: 'relative', overflow: 'hidden' }}>
-        {/* Notification */}
         {notification && (
           <Box style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, maxWidth: '400px' }}>
             <Notification
@@ -761,12 +759,12 @@ const Kitob = () => {
           </Box>
         )}
 
-        {/* Decorative Background */}
+   
         <Box style={{ position: 'absolute', top: '-100px', right: '-100px', width: '400px', height: '400px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)', filter: 'blur(40px)' }} />
         <Box style={{ position: 'absolute', bottom: '-150px', left: '-150px', width: '500px', height: '500px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.08)', filter: 'blur(60px)' }} />
 
         <Container size="xl" py={60} style={{ position: 'relative', zIndex: 1 }}>
-          {/* Header */}
+         
           <Box mb={50}>
             <Flex justify="space-between" align="center" mb={20}>
               <Group align="center" gap="md">
@@ -808,7 +806,7 @@ const Kitob = () => {
               </Group>
             </Flex>
 
-            {/* Search Bar */}
+    
             <Box style={{ background: isDark ? 'rgba(26, 27, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)', borderRadius: '20px', padding: '8px', boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)', border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)'}` }}>
               <Group gap={0} wrap="nowrap">
                 <TextInput
@@ -845,14 +843,14 @@ const Kitob = () => {
             </Box>
           </Box>
 
-          {/* Error Message */}
+       
           {error && (
             <Box mb={30} p={20} style={{ background: 'rgba(255, 107, 107, 0.15)', borderRadius: '16px', border: '1px solid rgba(255, 107, 107, 0.3)' }}>
               <Text style={{ color: 'white', fontWeight: 500 }}>⚠️ Xatolik: {error}</Text>
             </Box>
           )}
 
-          {/* Books Grid */}
+       
           {loading ? (
             <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="xl">
               {[1,2,3,4,5,6,7,8].map(i => (
@@ -972,7 +970,6 @@ const Kitob = () => {
         </Container>
       </Box>
 
-      {/* Add Book Modal */}
       <AddBookModal 
         opened={addModalOpened} 
         onClose={() => setAddModalOpened(false)} 

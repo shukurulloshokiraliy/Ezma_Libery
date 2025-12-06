@@ -10,7 +10,7 @@ export default function HomePage() {
   const [books, setBooks] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // localStorage'dan dark mode holatini o'qish
+
   useEffect(() => {
     const saved = localStorage.getItem('darkMode');
     if (saved) {
@@ -18,7 +18,6 @@ export default function HomePage() {
     }
   }, []);
 
-  // Header'dan dark mode o'zgarishini tingalsh
   useEffect(() => {
     const handleDarkModeChange = () => {
       const saved = localStorage.getItem('darkMode');
@@ -60,7 +59,7 @@ export default function HomePage() {
       minHeight: '100vh',
       transition: 'background 0.5s ease'
     }}>
-      {/* Hero Section */}
+
       <div style={{ 
         position: 'relative',
         minHeight: '600px',
@@ -153,7 +152,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Search Section */}
+
       <div style={{ 
         backgroundColor: isDark ? 'rgba(26, 29, 41, 0.8)' : 'rgba(255, 255, 255, 0.15)',
         padding: '48px 0',
@@ -231,7 +230,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Books Section */}
       <div style={{ 
         padding: '64px 48px',
         maxWidth: '1400px',

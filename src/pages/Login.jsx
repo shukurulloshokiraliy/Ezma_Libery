@@ -18,14 +18,14 @@ import {
 import { IconUser, IconLock, IconCheck, IconX } from "@tabler/icons-react";
 
 const LoginContent = () => {
-  const [phone, setPhone] = useState("99 999 99 99");
+  const [phone, setPhone] = useState(" +998 99 999 99 99");
   const [password, setPassword] = useState("123456");
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState(null);
 
   const handleLogin = async () => {
-    // Validatsiya
+   
     if (!phone || !password) {
       setNotification({
         type: 'error',
@@ -38,7 +38,7 @@ const LoginContent = () => {
     setNotification(null);
 
     try {
-      // Telefon raqamidan bo'sh joylarni olib tashlash
+ 
       const cleanPhone = phone.replace(/\s/g, '');
       
       console.log('Login attempt:', { phone: cleanPhone, password });
@@ -62,13 +62,13 @@ const LoginContent = () => {
         throw new Error(data.message || `Server xatosi: ${response.status}`);
       }
 
-      // Muvaffaqiyatli login
+     
       setNotification({
         type: 'success',
         message: 'Muvaffaqiyatli kirdingiz!'
       });
 
-      // Token saqlash
+     
       if (data.token || data.access) {
         const token = data.token || data.access;
         localStorage.setItem('authToken', token);
@@ -79,15 +79,13 @@ const LoginContent = () => {
         }
       }
 
-      // User ma'lumotlarini saqlash
       if (data.user) {
         localStorage.setItem('userData', JSON.stringify(data.user));
       }
 
-      // 2 sekunddan keyin redirect (yoki parent component'ga signal berish)
       setTimeout(() => {
         console.log('Redirecting to dashboard...');
-        // window.location.href = '/dashboard'; // Agar kerak bo'lsa
+    
       }, 2000);
 
     } catch (error) {
@@ -131,7 +129,7 @@ const LoginContent = () => {
         overflow: "hidden",
       }}
     >
-      {/* Notification */}
+ 
       {notification && (
         <Box style={{
           position: 'fixed',
@@ -151,7 +149,7 @@ const LoginContent = () => {
         </Box>
       )}
 
-      {/* Decorative circles */}
+
       <Box
         style={{
           position: "absolute",
@@ -184,7 +182,7 @@ const LoginContent = () => {
             alignItems: "center",
           }}
         >
-          {/* Left side - Welcome illustration */}
+         
           <Box style={{ color: "white", position: "relative" }}>
             <Title
               order={1}
@@ -199,7 +197,7 @@ const LoginContent = () => {
               Welcome Back!
             </Title>
 
-            {/* Illustration area */}
+        
             <Box
               style={{
                 position: "relative",
@@ -210,7 +208,7 @@ const LoginContent = () => {
                 justifyContent: "center",
               }}
             >
-              {/* Clipboard illustration */}
+             
               <Box
                 style={{
                   position: "relative",
@@ -222,7 +220,7 @@ const LoginContent = () => {
                   boxShadow: "0 20px 60px rgba(0, 0, 0, 0.2)",
                 }}
               >
-                {/* Clip */}
+            
                 <Box
                   style={{
                     position: "absolute",
@@ -236,7 +234,6 @@ const LoginContent = () => {
                   }}
                 />
 
-                {/* Paper */}
                 <Box
                   style={{
                     background: "white",
@@ -249,7 +246,7 @@ const LoginContent = () => {
                     gap: "20px",
                   }}
                 >
-                  {/* Profile icon */}
+                 
                   <Box
                     style={{
                       width: "80px",
@@ -264,7 +261,7 @@ const LoginContent = () => {
                     <IconUser size={40} color="white" />
                   </Box>
 
-                  {/* Form lines */}
+           
                   {[1, 2, 3, 4].map((i) => (
                     <Box
                       key={i}
@@ -278,7 +275,6 @@ const LoginContent = () => {
                   ))}
                 </Box>
 
-                {/* Magnifying glass */}
                 <Box
                   style={{
                     position: "absolute",
@@ -313,7 +309,7 @@ const LoginContent = () => {
                 </Box>
               </Box>
 
-              {/* Person illustration */}
+            
               <Box
                 style={{
                   position: "absolute",
@@ -323,7 +319,7 @@ const LoginContent = () => {
                   height: "200px",
                 }}
               >
-                {/* Body */}
+              
                 <Box
                   style={{
                     position: "absolute",
@@ -335,7 +331,7 @@ const LoginContent = () => {
                     borderRadius: "15px 15px 0 0",
                   }}
                 />
-                {/* Head */}
+       
                 <Box
                   style={{
                     position: "absolute",
@@ -347,7 +343,7 @@ const LoginContent = () => {
                     borderRadius: "50%",
                   }}
                 />
-                {/* Arm pointing */}
+         
                 <Box
                   style={{
                     position: "absolute",
@@ -362,7 +358,7 @@ const LoginContent = () => {
                 />
               </Box>
 
-              {/* Decorative plants */}
+        
               <Box
                 style={{
                   position: "absolute",
@@ -396,7 +392,6 @@ const LoginContent = () => {
             </Box>
           </Box>
 
-          {/* Right side - Login form */}
           <Box>
             <Paper
               shadow="xl"

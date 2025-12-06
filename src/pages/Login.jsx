@@ -425,7 +425,7 @@ const LoginContent = () => {
               <Stack gap="lg">
                 <TextInput
                   leftSection={<IconUser size={18} color="#FF6B35" />}
-                  placeholder="Telefon raqam (99 999 99 99)"
+                  placeholder="Telefon raqam ( +998 99 999 99 99)"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   size="md"

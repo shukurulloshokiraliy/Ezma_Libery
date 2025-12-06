@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Group, Button } from '@mantine/core';
 import { NavLink } from 'react-router-dom';
+import { IconLogout } from '@tabler/icons-react';
 
 // LOGO FILES
 import light_logo from '../assets/images/logo-smart.svg';
@@ -8,10 +9,19 @@ import dark_logo from '../assets/images/logo1.png';
 
 const Header = () => {
   const [isDark, setIsDark] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Dark mode va login holatini localStorage orqali olish
   useEffect(() => {
-    const saved = localStorage.getItem('darkMode');
-    if (saved) setIsDark(saved === 'true');
+    const savedDark = localStorage.getItem('darkMode');
+    if (savedDark) setIsDark(savedDark === 'true');
+
+    const savedLogin = localStorage.getItem('isLoggedIn');
+    setIsLoggedIn(savedLogin === 'true');
+
+    window.addEventListener("storage", () => {
+      setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true");
+    });
   }, []);
 
   const toggleDark = () => {
@@ -21,12 +31,18 @@ const Header = () => {
     window.dispatchEvent(new Event('darkModeChange'));
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
+    setIsLoggedIn(false);
+    window.location.href = '/login';
+  };
+
   return (
     <header
       style={{
         height: "80px",
         padding: "0 48px",
-        background: isDark 
+        background: isDark
           ? "linear-gradient(90deg, #1a1d29 0%, #2d1f3f 50%, #1a1d29 100%)"
           : "linear-gradient(90deg, #c17d11 0%, #d4a11e 50%, #c17d11 100%)",
         display: "flex",
@@ -37,13 +53,12 @@ const Header = () => {
       }}
     >
       <Group style={{ width: "100%", justifyContent: "space-between" }}>
-    
         <Group>
           <NavLink to="/" style={{ textDecoration: 'none' }}>
-            <img 
+            <img
               src={isDark ? light_logo : dark_logo}
               alt="Ezma"
-              style={{ 
+              style={{
                 width: 80,
                 filter: isDark ? 'brightness(1.2)' : 'brightness(1)'
               }}
@@ -53,97 +68,26 @@ const Header = () => {
 
         <Group gap="lg">
           <NavLink to="/" style={{ textDecoration: 'none' }}>
-            {({ isActive }) => (
-              <Button
-                variant={isActive ? "filled" : "subtle"}
-                color={isActive ? "yellow" : undefined}
-                style={{
-                  fontWeight: isActive ? 600 : 500,
-                  color: isActive 
-                    ? (isDark ? '#1a1d29' : '#000') 
-                    : (isDark ? '#ffffff' : '#ffffff'),
-                  backgroundColor: isActive 
-                    ? (isDark ? '#ffd43b' : '#fff') 
-                    : 'transparent',
-                  transition: 'all 0.2s ease'
-                }}
-                styles={{
-                  root: {
-                    '&:hover': {
-                      backgroundColor: isActive 
-                        ? undefined 
-                        : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)')
-                    }
-                  }
-                }}
-              >
-                Bosh sahifa
-              </Button>
-            )}
+            <Button variant="subtle" style={{ color: isDark ? '#fff' : '#000' }}>
+              Bosh sahifa
+            </Button>
           </NavLink>
 
           <NavLink to="/kitob" style={{ textDecoration: 'none' }}>
-            {({ isActive }) => (
-              <Button
-                variant={isActive ? "filled" : "subtle"}
-                color={isActive ? "yellow" : undefined}
-                style={{
-                  fontWeight: isActive ? 600 : 500,
-                  color: isActive 
-                    ? (isDark ? '#1a1d29' : '#000') 
-                    : (isDark ? '#ffffff' : '#ffffff'),
-                  backgroundColor: isActive 
-                    ? (isDark ? '#ffd43b' : '#fff') 
-                    : 'transparent',
-                  transition: 'all 0.2s ease'
-                }}
-                styles={{
-                  root: {
-                    '&:hover': {
-                      backgroundColor: isActive 
-                        ? undefined 
-                        : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)')
-                    }
-                  }
-                }}
-              >
-                Kitoblar
-              </Button>
-            )}
+            <Button variant="subtle" style={{ color: isDark ? '#fff' : '#000' }}>
+              Kitoblar
+            </Button>
           </NavLink>
 
           <NavLink to="/kutubxona" style={{ textDecoration: 'none' }}>
-            {({ isActive }) => (
-              <Button
-                variant={isActive ? "filled" : "subtle"}
-                color={isActive ? "yellow" : undefined}
-                style={{
-                  fontWeight: isActive ? 600 : 500,
-                  color: isActive 
-                    ? (isDark ? '#1a1d29' : '#000') 
-                    : (isDark ? '#ffffff' : '#ffffff'),
-                  backgroundColor: isActive 
-                    ? (isDark ? '#ffd43b' : '#fff') 
-                    : 'transparent',
-                  transition: 'all 0.2s ease'
-                }}
-                styles={{
-                  root: {
-                    '&:hover': {
-                      backgroundColor: isActive 
-                        ? undefined 
-                        : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)')
-                    }
-                  }
-                }}
-              >
-                Kutubxonalar
-              </Button>
-            )}
+            <Button variant="subtle" style={{ color: isDark ? '#fff' : '#000' }}>
+              Kutubxonalar
+            </Button>
           </NavLink>
         </Group>
 
-        <Group>
+        <Group gap="sm">
+          {/* Dark mode toggle */}
           <button
             onClick={toggleDark}
             style={{
@@ -178,30 +122,34 @@ const Header = () => {
             </div>
           </button>
 
-          <NavLink to="/login" style={{ textDecoration: 'none' }}>
-            <Button 
-              variant="filled" 
+          {/* Login bo‘lsa — CHIQISH | bo‘lmasa — KIRISH */}
+          {isLoggedIn ? (
+            <Button
+              leftIcon={<IconLogout size={18} />}
+              onClick={handleLogout}
+              size="md"
               radius="md"
-              style={{
-                backgroundColor: isDark ? '#ffd43b' : '#fff',
-                color: isDark ? '#1a1d29' : '#c17d11',
-                fontWeight: 600,
-                border: 'none',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
-                transition: 'all 0.2s ease'
-              }}
-              styles={{
-                root: {
-                  '&:hover': {
-                    transform: 'translateY(-1px)',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
-                  }
-                }
-              }}
+              variant="filled"
+              color="red"
             >
-              Kutubxonachi bo'lish
+              Chiqish
             </Button>
-          </NavLink>
+          ) : (
+            <NavLink to="/login" style={{ textDecoration: 'none' }}>
+              <Button
+                size="md"
+                radius="md"
+                variant="filled"
+                style={{
+                  backgroundColor: isDark ? '#ffd43b' : '#fff',
+                  color: isDark ? '#1a1d29' : '#c17d11',
+                  fontWeight: 600
+                }}
+              >
+                Kirish
+              </Button>
+            </NavLink>
+          )}
         </Group>
       </Group>
     </header>

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Group, Button } from '@mantine/core';
+import { Group, Button, Avatar } from '@mantine/core';
 import { NavLink } from 'react-router-dom';
-import { IconLogout } from '@tabler/icons-react';
-
+import { IconLogout, IconUser } from '@tabler/icons-react';
 
 import light_logo from '../assets/images/logo-smart.svg';
 import dark_logo from '../assets/images/logo1.png';
@@ -10,18 +9,36 @@ import dark_logo from '../assets/images/logo1.png';
 const Header = () => {
   const [isDark, setIsDark] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userData, setUserData] = useState(null);
 
-  
   useEffect(() => {
     const savedDark = localStorage.getItem('darkMode');
     if (savedDark) setIsDark(savedDark === 'true');
 
-    const savedLogin = localStorage.getItem('isLoggedIn');
-    setIsLoggedIn(savedLogin === 'true');
+    // Login holatini tekshirish
+    const checkLoginStatus = () => {
+      const loginStatus = localStorage.getItem('isLoggedIn');
+      setIsLoggedIn(loginStatus === 'true');
+      
+      // User ma'lumotlarini olish
+      const userDataStr = localStorage.getItem('userData');
+      if (userDataStr) {
+        try {
+          setUserData(JSON.parse(userDataStr));
+        } catch (e) {
+          console.error('Error parsing user data:', e);
+        }
+      }
+    };
 
-    window.addEventListener("storage", () => {
-      setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true");
-    });
+    checkLoginStatus();
+
+    // Storage o'zgarishlarini tinglash
+    window.addEventListener("storage", checkLoginStatus);
+    
+    return () => {
+      window.removeEventListener("storage", checkLoginStatus);
+    };
   }, []);
 
   const toggleDark = () => {
@@ -33,8 +50,28 @@ const Header = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
+    localStorage.removeItem('rememberMe');
+    localStorage.removeItem('userPhone');
     setIsLoggedIn(false);
+    setUserData(null);
     window.location.href = '/login';
+  };
+
+  // User ismini olish
+  const getUserName = () => {
+    if (userData?.name) return userData.name;
+    if (userData?.first_name) return userData.first_name;
+    if (userData?.username) return userData.username;
+    if (userData?.phone) return userData.phone;
+    return 'Foydalanuvchi';
+  };
+
+  // User avatar (birinchi harf)
+  const getUserInitial = () => {
+    const name = getUserName();
+    return name.charAt(0).toUpperCase();
   };
 
   return (
@@ -87,7 +124,7 @@ const Header = () => {
         </Group>
 
         <Group gap="sm">
-    
+          {/* Dark mode toggle */}
           <button
             onClick={toggleDark}
             style={{
@@ -122,21 +159,50 @@ const Header = () => {
             </div>
           </button>
 
-         
+          {/* Login yoki Profile va Chiqish */}
           {isLoggedIn ? (
-            <Button
-              leftIcon={<IconLogout size={18} />}
-              onClick={handleLogout}
-              size="md"
-              radius="md"
-              variant="filled"
-              color="red"
-            >
-              Chiqish
-            </Button>
+            <>
+              {/* Profile tugmasi */}
+              <NavLink to="/profile" style={{ textDecoration: 'none' }}>
+                <Button
+                  leftSection={
+                    <Avatar 
+                      color="orange" 
+                      radius="xl" 
+                      size={28}
+                    >
+                      {getUserInitial()}
+                    </Avatar>
+                  }
+                  size="md"
+                  radius="md"
+                  variant="filled"
+                  style={{
+                    backgroundColor: isDark ? '#ffd43b' : '#fff',
+                    color: isDark ? '#1a1d29' : '#c17d11',
+                    fontWeight: 600
+                  }}
+                >
+                  {getUserName()}
+                </Button>
+              </NavLink>
+
+              {/* Chiqish tugmasi */}
+              <Button
+                leftSection={<IconLogout size={18} />}
+                onClick={handleLogout}
+                size="md"
+                radius="md"
+                variant="filled"
+                color="red"
+              >
+                Chiqish
+              </Button>
+            </>
           ) : (
             <NavLink to="/login" style={{ textDecoration: 'none' }}>
               <Button
+                leftSection={<IconUser size={18} />}
                 size="md"
                 radius="md"
                 variant="filled"

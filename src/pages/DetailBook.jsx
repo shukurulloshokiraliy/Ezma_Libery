@@ -19,7 +19,7 @@ const DetailBook = ({ bookId, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Dark mode state
+  
   useEffect(() => {
     const savedMode = localStorage.getItem('darkMode');
     if (savedMode) {
@@ -35,7 +35,7 @@ const DetailBook = ({ bookId, onBack }) => {
     return () => window.removeEventListener('darkModeChange', handleDarkModeChange);
   }, []);
 
-  // Kitob va kutubxonalarni yuklash
+ 
   useEffect(() => {
     console.log('=== DetailBook useEffect started ===');
     console.log('Received bookId:', bookId);

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Bu qatorni qo'shing
 import {
   TextInput,
   PasswordInput,
@@ -18,6 +19,7 @@ import {
 import { IconUser, IconLock, IconCheck, IconX } from "@tabler/icons-react";
 
 const LoginContent = () => {
+  const navigate = useNavigate(); // Navigate hook
   const [phone, setPhone] = useState(" +998 99 999 99 99");
   const [password, setPassword] = useState("123456");
   const [rememberMe, setRememberMe] = useState(false);
@@ -83,10 +85,11 @@ const LoginContent = () => {
         localStorage.setItem('userData', JSON.stringify(data.user));
       }
 
-      setTimeout(() => {
-        console.log('Redirecting to dashboard...');
     
-      }, 2000);
+      setTimeout(() => {
+        console.log('Redirecting to homepage...');
+        navigate('/kitob'); 
+      }, 1000);
 
     } catch (error) {
       console.error('Login error:', error);
@@ -149,7 +152,6 @@ const LoginContent = () => {
         </Box>
       )}
 
-
       <Box
         style={{
           position: "absolute",
@@ -197,7 +199,6 @@ const LoginContent = () => {
               Welcome Back!
             </Title>
 
-        
             <Box
               style={{
                 position: "relative",

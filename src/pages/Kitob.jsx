@@ -773,7 +773,7 @@ const Kitob = () => {
                 </Box>
                 <Box>
                   <Text size="42px" fw={800} style={{ color: 'white', textShadow: '0 2px 20px rgba(0, 0, 0, 0.2)', letterSpacing: '-0.5px' }}>
-                    Kutubxona
+                    Kitoblar
                   </Text>
                   <Text size="md" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                     {books.length} ta kitob mavjud
@@ -814,7 +814,7 @@ const Kitob = () => {
                   size="lg"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  leftSection={<IconSearch size={20} color={isDark ? '#d4a11e' : '#c17d11'} />}
+                 
                   styles={{ 
                     input: { 
                       border: 'none', 

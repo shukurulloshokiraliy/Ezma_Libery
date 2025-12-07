@@ -15,12 +15,10 @@ const Header = () => {
     const savedDark = localStorage.getItem('darkMode');
     if (savedDark) setIsDark(savedDark === 'true');
 
-    // Login holatini tekshirish
     const checkLoginStatus = () => {
       const loginStatus = localStorage.getItem('isLoggedIn');
       setIsLoggedIn(loginStatus === 'true');
       
-      // User ma'lumotlarini olish
       const userDataStr = localStorage.getItem('userData');
       if (userDataStr) {
         try {
@@ -32,12 +30,16 @@ const Header = () => {
     };
 
     checkLoginStatus();
-
-    // Storage o'zgarishlarini tinglash
+    
+    // Barcha eventlarni tinglash
     window.addEventListener("storage", checkLoginStatus);
+    window.addEventListener("loginSuccess", checkLoginStatus);
+    window.addEventListener("logoutSuccess", checkLoginStatus);
     
     return () => {
       window.removeEventListener("storage", checkLoginStatus);
+      window.removeEventListener("loginSuccess", checkLoginStatus);
+      window.removeEventListener("logoutSuccess", checkLoginStatus);
     };
   }, []);
 
@@ -56,10 +58,13 @@ const Header = () => {
     localStorage.removeItem('userPhone');
     setIsLoggedIn(false);
     setUserData(null);
+    
+    // Logout eventini yuborish
+    window.dispatchEvent(new Event('logoutSuccess'));
+    
     window.location.href = '/login';
   };
 
-  // User ismini olish
   const getUserName = () => {
     if (userData?.name) return userData.name;
     if (userData?.first_name) return userData.first_name;
@@ -68,7 +73,6 @@ const Header = () => {
     return 'Foydalanuvchi';
   };
 
-  // User avatar (birinchi harf)
   const getUserInitial = () => {
     const name = getUserName();
     return name.charAt(0).toUpperCase();
@@ -97,7 +101,8 @@ const Header = () => {
               alt="Ezma"
               style={{
                 width: 80,
-                filter: isDark ? 'brightness(1.2)' : 'brightness(1)'
+                filter: isDark ? 'brightness(1.2)' : 'brightness(1)',
+                transition: "filter 0.3s ease"
               }}
             />
           </NavLink>
@@ -105,26 +110,25 @@ const Header = () => {
 
         <Group gap="lg">
           <NavLink to="/" style={{ textDecoration: 'none' }}>
-            <Button variant="subtle" style={{ color: isDark ? '#fff' : '#000' }}>
+            <Button variant="subtle" style={{ color: isDark ? '#fff' : '#000', transition: "color 0.3s ease" }}>
               Bosh sahifa
             </Button>
           </NavLink>
 
           <NavLink to="/kitob" style={{ textDecoration: 'none' }}>
-            <Button variant="subtle" style={{ color: isDark ? '#fff' : '#000' }}>
+            <Button variant="subtle" style={{ color: isDark ? '#fff' : '#000', transition: "color 0.3s ease" }}>
               Kitoblar
             </Button>
           </NavLink>
 
           <NavLink to="/kutubxona" style={{ textDecoration: 'none' }}>
-            <Button variant="subtle" style={{ color: isDark ? '#fff' : '#000' }}>
+            <Button variant="subtle" style={{ color: isDark ? '#fff' : '#000', transition: "color 0.3s ease" }}>
               Kutubxonalar
             </Button>
           </NavLink>
         </Group>
 
         <Group gap="sm">
-          {/* Dark mode toggle */}
           <button
             onClick={toggleDark}
             style={{
@@ -159,10 +163,8 @@ const Header = () => {
             </div>
           </button>
 
-          {/* Login yoki Profile va Chiqish */}
           {isLoggedIn ? (
             <>
-              {/* Profile tugmasi */}
               <NavLink to="/profile" style={{ textDecoration: 'none' }}>
                 <Button
                   leftSection={
@@ -180,14 +182,14 @@ const Header = () => {
                   style={{
                     backgroundColor: isDark ? '#ffd43b' : '#fff',
                     color: isDark ? '#1a1d29' : '#c17d11',
-                    fontWeight: 600
+                    fontWeight: 600,
+                    transition: "all 0.3s ease"
                   }}
                 >
                   {getUserName()}
                 </Button>
               </NavLink>
 
-              {/* Chiqish tugmasi */}
               <Button
                 leftSection={<IconLogout size={18} />}
                 onClick={handleLogout}
@@ -195,6 +197,9 @@ const Header = () => {
                 radius="md"
                 variant="filled"
                 color="red"
+                style={{
+                  transition: "all 0.3s ease"
+                }}
               >
                 Chiqish
               </Button>
@@ -209,7 +214,8 @@ const Header = () => {
                 style={{
                   backgroundColor: isDark ? '#ffd43b' : '#fff',
                   color: isDark ? '#1a1d29' : '#c17d11',
-                  fontWeight: 600
+                  fontWeight: 600,
+                  transition: "all 0.3s ease"
                 }}
               >
                 Kirish

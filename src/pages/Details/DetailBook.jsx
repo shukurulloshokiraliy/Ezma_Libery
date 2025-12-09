@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Container, Box, Text, Group, Paper, Stack, Badge,
-  Title, Card, Flex, Skeleton, SimpleGrid, Button, Alert
-} from '@mantine/core';
-import {
-  IconUser, IconBuilding, IconBook, IconMapPin,
-  IconBrandTelegram, IconBrandFacebook, IconBrandInstagram,
-  IconWorld, IconAlertCircle
-} from '@tabler/icons-react';
+import { AlertCircle, User, Building, Book, MapPin, Globe, Instagram, Facebook, Send } from 'lucide-react';
 
 const API_URL = 'https://org-ave-jimmy-learners.trycloudflare.com/api/v1';
 
@@ -20,59 +12,57 @@ const DetailBook = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const savedMode = localStorage.getItem('darkMode');
-    if (savedMode) setIsDark(savedMode === 'true');
-    
-    const handleDarkModeChange = () => {
-      const currentMode = localStorage.getItem('darkMode');
-      setIsDark(currentMode === 'true');
-    };
-    
-    window.addEventListener('darkModeChange', handleDarkModeChange);
-    return () => window.removeEventListener('darkModeChange', handleDarkModeChange);
-  }, []);
-
-  useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       setError(null);
       
       try {
-        // Test uchun ID 123 ishlatamiz (rasmda ko'rsatilgan)
-        const bookId = '123';
+        // Avval barcha kitoblarni olish
+        console.log('Barcha kitoblar yuklanmoqda...');
+        const booksRes = await fetch(`${API_URL}/books/books/`);
         
-        console.log('Kitob yuklanmoqda:', bookId);
-        const bookRes = await fetch(`${API_URL}/books/book/${bookId}/`);
-        
-        if (!bookRes.ok) {
-          throw new Error(`Kitob topilmadi (Status: ${bookRes.status})`);
+        if (!booksRes.ok) {
+          throw new Error(`Kitoblar yuklanmadi (Status: ${booksRes.status})`);
         }
         
-        const bookData = await bookRes.json();
-        console.log('Kitob ma\'lumoti:', bookData);
-        setBook(bookData);
-
-        // Barcha kitoblarni yuklash
-        try {
-          const booksRes = await fetch(`${API_URL}/books/books/`);
-          if (booksRes.ok) {
-            const booksData = await booksRes.json();
-            console.log('Barcha kitoblar:', booksData);
-            const books = booksData.results || booksData || [];
-            // Hozirgi kitobdan boshqa 4 ta kitob olish
-            const otherBooks = books.filter(b => b.id !== bookData.id).slice(0, 4);
-            setRelatedBooks(otherBooks);
-            console.log('4 ta kitob:', otherBooks);
+        const booksData = await booksRes.json();
+        console.log('Barcha kitoblar:', booksData);
+        
+        const books = booksData.results || booksData || [];
+        
+        if (books.length === 0) {
+          throw new Error('Hech qanday kitob topilmadi');
+        }
+        
+        // URL'dan ID olish yoki birinchi kitobni tanlash
+        const urlParams = new URLSearchParams(window.location.search);
+        let bookId = urlParams.get('id');
+        
+        let selectedBook = null;
+        
+        if (bookId) {
+          selectedBook = books.find(b => b.id.toString() === bookId.toString());
+          if (!selectedBook) {
+            console.log(`ID ${bookId} topilmadi, birinchi kitob tanlanadi`);
+            selectedBook = books[0];
           }
-        } catch (e) {
-          console.log('Barcha kitoblar yuklanmadi:', e);
+        } else {
+          selectedBook = books[0];
         }
-
+        
+        console.log('Tanlangan kitob:', selectedBook);
+        setBook(selectedBook);
+        
+        // Boshqa kitoblarni ko'rsatish
+        const otherBooks = books.filter(b => b.id !== selectedBook.id).slice(0, 4);
+        setRelatedBooks(otherBooks);
+        console.log('Boshqa kitoblar:', otherBooks);
+        
         // Kutubxonalarni yuklash
-        if (bookData.libraries && bookData.libraries.length > 0) {
-          console.log('Kutubxona IDlar:', bookData.libraries);
+        if (selectedBook.libraries && selectedBook.libraries.length > 0) {
+          console.log('Kutubxonalar yuklanmoqda:', selectedBook.libraries);
           
-          const libraryPromises = bookData.libraries.map(async (libId) => {
+          const libraryPromises = selectedBook.libraries.map(async (libId) => {
             try {
               const res = await fetch(`${API_URL}/libraries/library/${libId}/`);
               if (!res.ok) return null;
@@ -87,13 +77,13 @@ const DetailBook = () => {
           
           const libraries = await Promise.all(libraryPromises);
           const validLibraries = libraries.filter(lib => lib !== null);
-          console.log('Barcha kutubxonalar:', validLibraries);
+          console.log('Yuklangan kutubxonalar:', validLibraries);
           setBookLibraries(validLibraries);
         } else {
           console.log('Bu kitobda kutubxonalar yo\'q');
         }
       } catch (err) {
-        console.error('Umumiy xatolik:', err);
+        console.error('Xatolik:', err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -110,154 +100,217 @@ const DetailBook = () => {
 
   if (loading) {
     return (
-      <Box style={{ minHeight: '100vh', background: bgColor, padding: '20px 0' }}>
-        <Container size="xl">
-          <Paper shadow="xs" p={40} radius="md" mb={20} style={{ background: cardBg }}>
-            <Flex gap={40} wrap="wrap">
-              <Skeleton height={220} width={160} radius="md" />
-              <Stack gap="md" style={{ flex: 1 }}>
-                <Skeleton height={40} width="60%" />
-                <Skeleton height={30} width={100} />
-                <Skeleton height={20} width="40%" />
-                <Skeleton height={20} width="50%" />
-              </Stack>
-            </Flex>
-          </Paper>
-          <Text size="sm" c="dimmed" ta="center">Ma'lumotlar yuklanmoqda...</Text>
-        </Container>
-      </Box>
+      <div style={{ minHeight: '100vh', background: bgColor, padding: '20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ 
+            background: cardBg, 
+            padding: '40px', 
+            borderRadius: '12px',
+            marginBottom: '20px'
+          }}>
+            <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap' }}>
+              <div style={{ 
+                width: '160px', 
+                height: '220px', 
+                background: 'rgba(255,255,255,0.2)',
+                borderRadius: '8px',
+                animation: 'pulse 2s infinite'
+              }} />
+              <div style={{ flex: 1, minWidth: '300px' }}>
+                <div style={{ 
+                  height: '40px', 
+                  background: 'rgba(255,255,255,0.2)',
+                  borderRadius: '8px',
+                  marginBottom: '12px',
+                  width: '60%',
+                  animation: 'pulse 2s infinite'
+                }} />
+                <div style={{ 
+                  height: '30px', 
+                  background: 'rgba(255,255,255,0.2)',
+                  borderRadius: '8px',
+                  marginBottom: '12px',
+                  width: '100px',
+                  animation: 'pulse 2s infinite'
+                }} />
+              </div>
+            </div>
+          </div>
+          <p style={{ textAlign: 'center', color: '#999' }}>Ma'lumotlar yuklanmoqda...</p>
+        </div>
+        <style>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+          }
+        `}</style>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Box style={{ minHeight: '100vh', background: bgColor, padding: '20px 0' }}>
-        <Container size="xl">
-          <Alert icon={<IconAlertCircle />} title="Xatolik yuz berdi" color="red" radius="md">
-            <Text mb="sm">{error}</Text>
-            <Text size="sm">Console'ni tekshiring (F12) - batafsil ma'lumot uchun</Text>
-            <Button mt="md" onClick={() => window.location.reload()}>
-              Qayta yuklash
-            </Button>
-          </Alert>
-        </Container>
-      </Box>
+      <div style={{ minHeight: '100vh', background: bgColor, padding: '20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ 
+            background: '#fee',
+            border: '1px solid #fcc',
+            padding: '20px',
+            borderRadius: '8px'
+          }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+              <AlertCircle size={24} color="#c00" />
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#c00' }}>Xatolik yuz berdi</h3>
+                <p style={{ margin: '0 0 8px 0' }}>{error}</p>
+                <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#666' }}>
+                  Console'ni tekshiring (F12) - batafsil ma'lumot uchun
+                </p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  style={{
+                    background: '#c00',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Qayta yuklash
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
   if (!book) {
     return (
-      <Box style={{ minHeight: '100vh', background: bgColor, padding: '20px 0' }}>
-        <Container size="xl">
-          <Alert icon={<IconAlertCircle />} title="Ma'lumot topilmadi" color="yellow" radius="md">
-            <Text>Kitob ma'lumotlari topilmadi. Console'ni tekshiring.</Text>
-          </Alert>
-        </Container>
-      </Box>
+      <div style={{ minHeight: '100vh', background: bgColor, padding: '20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ 
+            background: '#ffc',
+            border: '1px solid #fc0',
+            padding: '20px',
+            borderRadius: '8px'
+          }}>
+            <h3 style={{ margin: '0 0 8px 0' }}>Ma'lumot topilmadi</h3>
+            <p style={{ margin: 0 }}>Kitob ma'lumotlari topilmadi.</p>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box style={{ minHeight: '100vh', background: bgColor, padding: '20px 0' }}>
-      <Container size="xl">
+    <div style={{ minHeight: '100vh', background: bgColor, padding: '20px' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Kitob kartochkasi */}
-        <Paper 
-          shadow="sm" 
-          p={40} 
-          radius="lg" 
-          mb={20}
-          style={{ background: cardBg, border: isDark ? '1px solid #404040' : 'none' }}
-        >
-          <Flex gap={40} wrap="wrap" align="flex-start">
-            <Box style={{ width: 160, flexShrink: 0 }}>
+        <div style={{ 
+          background: cardBg, 
+          padding: '40px', 
+          borderRadius: '12px',
+          marginBottom: '20px',
+          border: isDark ? '1px solid #404040' : 'none'
+        }}>
+          <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            <div style={{ width: '160px', flexShrink: 0 }}>
               <img 
                 src={book.image || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&w=400'}
                 alt={book.name}
                 style={{
                   width: '100%',
-                  height: 220,
+                  height: '220px',
                   objectFit: 'cover',
-                  borderRadius: 8
+                  borderRadius: '8px'
                 }}
               />
-            </Box>
+            </div>
 
-            <Stack gap="lg" style={{ flex: 1, minWidth: 300 }}>
-              <Box>
-                <Title order={1} size={28} mb={12} style={{ color: textColor }}>
-                  {book.name}
-                </Title>
-                <Badge 
-                  size="md" 
-                  variant="light"
-                  leftSection={<Text size="xs">#</Text>}
-                  style={{ 
-                    background: isDark ? '#e3f2fd' : 'rgba(255,255,255,0.3)', 
-                    color: isDark ? '#1976d2' : 'white',
-                    backdropFilter: 'blur(10px)'
-                  }}
-                >
-                  ID: {book.id}
-                </Badge>
-              </Box>
+            <div style={{ flex: 1, minWidth: '300px' }}>
+              <h1 style={{ 
+                fontSize: '28px', 
+                marginBottom: '12px', 
+                color: textColor,
+                fontWeight: 600 
+              }}>
+                {book.name}
+              </h1>
+              <div style={{ 
+                display: 'inline-block',
+                background: isDark ? '#e3f2fd' : 'rgba(255,255,255,0.3)',
+                color: isDark ? '#1976d2' : 'white',
+                padding: '4px 12px',
+                borderRadius: '16px',
+                fontSize: '14px',
+                marginBottom: '24px'
+              }}>
+                #ID: {book.id}
+              </div>
 
-              <Stack gap="md">
-                <Group gap={12}>
-                  <IconUser size={18} color={isDark ? textSecondary : 'rgba(255,255,255,0.9)'} />
-                  <Box>
-                    <Text size="sm" style={{ color: isDark ? textSecondary : 'rgba(255,255,255,0.8)' }}>Muallif:</Text>
-                    <Text size="sm" fw={500} style={{ color: textColor }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <User size={18} color={isDark ? textSecondary : 'rgba(255,255,255,0.9)'} />
+                  <div>
+                    <div style={{ fontSize: '14px', color: isDark ? textSecondary : 'rgba(255,255,255,0.8)' }}>
+                      Muallif:
+                    </div>
+                    <div style={{ fontSize: '14px', fontWeight: 500, color: textColor }}>
                       {book.author || 'Noma\'lum'}
-                    </Text>
-                  </Box>
-                </Group>
+                    </div>
+                  </div>
+                </div>
 
-                <Group gap={12}>
-                  <IconBuilding size={18} color={isDark ? textSecondary : 'rgba(255,255,255,0.9)'} />
-                  <Box>
-                    <Text size="sm" style={{ color: isDark ? textSecondary : 'rgba(255,255,255,0.8)' }}>Nashriyotchi:</Text>
-                    <Text size="sm" fw={500} style={{ color: textColor }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <Building size={18} color={isDark ? textSecondary : 'rgba(255,255,255,0.9)'} />
+                  <div>
+                    <div style={{ fontSize: '14px', color: isDark ? textSecondary : 'rgba(255,255,255,0.8)' }}>
+                      Nashriyotchi:
+                    </div>
+                    <div style={{ fontSize: '14px', fontWeight: 500, color: textColor }}>
                       {book.publisher || 'Noma\'lum'}
-                    </Text>
-                  </Box>
-                </Group>
+                    </div>
+                  </div>
+                </div>
 
-                <Group gap={12}>
-                  <IconBook size={18} color={isDark ? textSecondary : 'rgba(255,255,255,0.9)'} />
-                  <Box>
-                    <Text size="sm" style={{ color: isDark ? textSecondary : 'rgba(255,255,255,0.8)' }}>Kitoblar soni:</Text>
-                    <Text size="sm" fw={500} style={{ color: textColor }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <Book size={18} color={isDark ? textSecondary : 'rgba(255,255,255,0.9)'} />
+                  <div>
+                    <div style={{ fontSize: '14px', color: isDark ? textSecondary : 'rgba(255,255,255,0.8)' }}>
+                      Kutubxonalar soni:
+                    </div>
+                    <div style={{ fontSize: '14px', fontWeight: 500, color: textColor }}>
                       {bookLibraries.length}
-                    </Text>
-                  </Box>
-                </Group>
-              </Stack>
-            </Stack>
-          </Flex>
-        </Paper>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Kutubxonalar */}
         {bookLibraries.length > 0 ? (
-          <Box mb={30}>
-            <Title order={2} size={20} mb={16} style={{ color: textColor }}>
+          <div style={{ marginBottom: '30px' }}>
+            <h2 style={{ fontSize: '20px', marginBottom: '16px', color: isDark ? '#e7dfdf' : '#0d0d0d' }}>
               Kutubxonalar
-            </Title>
+            </h2>
 
-            <Paper 
-              shadow="sm" 
-              p="lg" 
-              radius="lg"
-              style={{ 
-                background: cardBg,
-                border: isDark ? '1px solid #404040' : '1px solid #e0e0e0'
-              }}
-            >
-              <Flex gap="lg" align="center" justify="space-between" wrap="wrap">
-                <Group gap="lg">
-                  <Box style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: 8,
+            <div style={{ 
+              background: cardBg,
+              padding: '24px',
+              borderRadius: '12px',
+              border: isDark ? '1px solid #404040' : '1px solid #e0e0e0'
+            }}>
+              <div style={{ display: 'flex', gap: '24px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+                  <div style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '8px',
                     overflow: 'hidden',
                     background: isDark ? '#404040' : '#e0e0e0',
                     flexShrink: 0
@@ -267,76 +320,81 @@ const DetailBook = () => {
                       alt={bookLibraries[0].name}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
-                  </Box>
-                  <Box>
-                    <Group gap={8} mb={6}>
-                      <IconMapPin size={18} color={textSecondary} />
-                      <Text size="md" fw={500} style={{ color: textColor }}>
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
+                      <MapPin size={18} color={textSecondary} />
+                      <span style={{ fontSize: '16px', fontWeight: 500, color: textColor }}>
                         {bookLibraries[0].name}
-                      </Text>
-                    </Group>
-                  </Box>
-                </Group>
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-                <Group gap="lg" wrap="wrap">
-                  <Group gap={8} style={{ cursor: 'pointer' }}>
-                    <IconWorld size={18} style={{ color: '#00bcd4' }} />
-                    <Text size="sm" style={{ color: '#00bcd4' }}>Manzil</Text>
-                  </Group>
-                  <Group gap={8} style={{ cursor: 'pointer' }}>
-                    <IconBrandInstagram size={18} style={{ color: '#00bcd4' }} />
-                    <Text size="sm" style={{ color: '#00bcd4' }}>Instagram</Text>
-                  </Group>
-                  <Group gap={8} style={{ cursor: 'pointer' }}>
-                    <IconBrandFacebook size={18} style={{ color: '#00bcd4' }} />
-                    <Text size="sm" style={{ color: '#00bcd4' }}>Facebook</Text>
-                  </Group>
-                  <Group gap={8} style={{ cursor: 'pointer' }}>
-                    <IconBrandTelegram size={18} style={{ color: '#00bcd4' }} />
-                    <Text size="sm" style={{ color: '#00bcd4' }}>Telegram</Text>
-                  </Group>
-                </Group>
-              </Flex>
-            </Paper>
-          </Box>
+                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', cursor: 'pointer' }}>
+                    <Globe size={18} color="#00bcd4" />
+                    <span style={{ fontSize: '14px', color: '#00bcd4' }}>Manzil</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', cursor: 'pointer' }}>
+                    <Instagram size={18} color="#00bcd4" />
+                    <span style={{ fontSize: '14px', color: '#00bcd4' }}>Instagram</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', cursor: 'pointer' }}>
+                    <Facebook size={18} color="#00bcd4" />
+                    <span style={{ fontSize: '14px', color: '#00bcd4' }}>Facebook</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', cursor: 'pointer' }}>
+                    <Send size={18} color="#00bcd4" />
+                    <span style={{ fontSize: '14px', color: '#00bcd4' }}>Telegram</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         ) : (
-          <Box mb={30}>
-            <Alert color="blue" radius="md" >
-              <Title order={2} size={20} style={{ color: isDark ? '#e7dfdf' : '#0d0d0d' }} >
-              Bu kitob hozircha hech qaysi kutubxonada yo'q
-              </Title>
-             
-            </Alert>
-          </Box>
+          <div style={{ marginBottom: '30px' }}>
+            <div style={{ 
+              background: '#e3f2fd',
+              padding: '20px',
+              borderRadius: '8px'
+            }}>
+              <h2 style={{ fontSize: '20px', color: '#0d0d0d', margin: 0 }}>
+                Bu kitob hozircha hech qaysi kutubxonada yo'q
+              </h2>
+            </div>
+          </div>
         )}
 
         {/* Barcha kitoblar */}
         {relatedBooks.length > 0 && (
-          <Box>
-            <Title order={2} size={20} mb={16} style={{ color: isDark ? '#e7dfdf' : '#0d0d0d' }}>
+          <div>
+            <h2 style={{ fontSize: '20px', marginBottom: '16px', color: isDark ? '#e7dfdf' : '#0d0d0d' }}>
               Barcha kitoblar
-            </Title>
+            </h2>
 
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg">
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+              gap: '20px'
+            }}>
               {relatedBooks.map(b => (
-                <Card 
+                <div 
                   key={b.id}
-                  shadow="sm"
-                  padding={0}
-                  radius="lg"
                   style={{ 
                     background: cardBg,
-                    border: isDark ? '1px solid #404040' : 'none',
+                    borderRadius: '12px',
                     overflow: 'hidden',
                     cursor: 'pointer',
                     transition: 'transform 0.2s',
+                    border: isDark ? '1px solid #404040' : 'none'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
                   onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                 >
-                  <Box style={{ 
+                  <div style={{ 
                     width: '100%', 
-                    height: 200,
+                    height: '200px',
                     background: isDark ? '#404040' : '#e0e0e0'
                   }}>
                     <img 
@@ -348,46 +406,47 @@ const DetailBook = () => {
                         objectFit: 'cover' 
                       }}
                     />
-                  </Box>
-                  <Box p="md">
-                    <Text 
-                      size="md" 
-                      fw={600} 
-                      mb={6} 
-                      style={{ color: textColor }}
-                      lineClamp={1}
-                    >
+                  </div>
+                  <div style={{ padding: '16px' }}>
+                    <h3 style={{ 
+                      fontSize: '16px',
+                      fontWeight: 600,
+                      marginBottom: '8px',
+                      color: textColor,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
                       {b.name}
-                    </Text>
-                    <Text size="xs" mb={4} style={{ color: textSecondary }}>
+                    </h3>
+                    <p style={{ fontSize: '12px', marginBottom: '4px', color: textSecondary }}>
                       Muallif: <span style={{ fontWeight: 500 }}>{b.author || 'Noma\'lum'}</span>
-                    </Text>
-                    <Text size="xs" mb={12} style={{ color: textSecondary }}>
+                    </p>
+                    <p style={{ fontSize: '12px', marginBottom: '12px', color: textSecondary }}>
                       Nashriyot: <span style={{ fontWeight: 500 }}>{b.publisher || 'Noma\'lum'}</span>
-                    </Text>
-                    <Button 
-                      fullWidth 
-                      size="sm"
-                      variant="light"
-                      style={{ 
-                        background: '#e3f2fd',
-                        color: '#1976d2',
-                        border: 'none',
-                        textTransform: 'uppercase',
-                        fontSize: 11,
-                        fontWeight: 600
-                      }}
-                    >
+                    </p>
+                    <button style={{ 
+                      width: '100%',
+                      padding: '8px',
+                      background: '#e3f2fd',
+                      color: '#1976d2',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      cursor: 'pointer'
+                    }}>
                       {b.quantity_in_library || 1} TA KITOB MAVJUD
-                    </Button>
-                  </Box>
-                </Card>
+                    </button>
+                  </div>
+                </div>
               ))}
-            </SimpleGrid>
-          </Box>
+            </div>
+          </div>
         )}
-      </Container>
-    </Box>
+      </div>
+    </div>
   );
 };
 

@@ -91,18 +91,30 @@ const AddBookModal = ({ opened, onClose, onAdd, isDark }) => {
         formDataExcel,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
+            'Authorization': `Bearer ${token}`
+            // Content-Type ni o'chirish - FormData o'zi avtomatik qo'shadi
           }
         }
       );
 
-      onAdd(data.books);
-      setExcelFile(null);
-      onClose();
-      alert(`${data.books?.length || 0} ta kitob muvaffaqiyatli qo'shildi!`);
+      // API javobini tekshirish
+      const uploadedBooks = data.books || data || [];
+      
+      if (Array.isArray(uploadedBooks) && uploadedBooks.length > 0) {
+        onAdd(uploadedBooks);
+        setExcelFile(null);
+        onClose();
+        alert(`${uploadedBooks.length} ta kitob muvaffaqiyatli qo'shildi!`);
+      } else {
+        alert('Excel fayldan kitoblar o\'qilmadi. Fayl formatini tekshiring.');
+      }
     } catch (e) {
-      alert(`Xatolik: ${e.response?.data?.detail || e.message}`);
+      console.error('Excel yuklash xatosi:', e);
+      const errorMsg = e.response?.data?.detail 
+        || e.response?.data?.message 
+        || e.message 
+        || 'Noma\'lum xatolik';
+      alert(`Xatolik: ${errorMsg}`);
     } finally {
       setLoading(false);
     }

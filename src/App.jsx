@@ -8,6 +8,7 @@ import Login from './pages/Login/Login.jsx'
 import DetailBook from './pages/Details/DetailBook.jsx'
 import DetailLibrary from './pages/Details/DetailLibrary.jsx'
 import Profile from './pages/Profile/Profile.jsx'
+import Signup from './pages/Sign/Signup.jsx'
 
 const App = () => {
   return (
@@ -21,6 +22,7 @@ const App = () => {
           <Route path="/kutubxona/:id" element={<DetailLibrary />} />
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile/>} />
+          <Route path="/sign" element={<Signup/>} />
         </Route>
       </Routes>
     </div>

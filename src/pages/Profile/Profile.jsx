@@ -44,20 +44,19 @@ const ProfileContent = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('xarita');
   
-  // Map states
+
   const [mapCenter, setMapCenter] = useState([41.2995, 69.2401]);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [locationName, setLocationName] = useState('');
   const [locationLoading, setLocationLoading] = useState(false);
 
   useEffect(() => {
-    // Dark mode o'qish
+    
     const savedDark = localStorage.getItem('darkMode');
     if (savedDark) {
       setIsDark(savedDark === 'true');
     }
 
-    // Dark mode o'zgarishini tinglash
     const handleDarkModeChange = () => {
       const savedDark = localStorage.getItem('darkMode');
       setIsDark(savedDark === 'true');
@@ -110,7 +109,7 @@ const ProfileContent = () => {
       
       setProfileData(data);
       
-      // Set initial map center from profile data
+    
       if (data.latitude && data.longitude) {
         const center = [parseFloat(data.latitude), parseFloat(data.longitude)];
         setMapCenter(center);
@@ -138,7 +137,7 @@ const ProfileContent = () => {
     setLocationLoading(true);
     
     try {
-      // Yandex Geocoder API orqali joy nomini olish
+  
       const response = await fetch(
         `https://geocode-maps.yandex.ru/1.x/?apikey=bc32072f-a50d-4f7e-b22c-a4b70bba1202&geocode=${coords[1]},${coords[0]}&format=json&lang=uz_UZ`
       );
@@ -270,7 +269,7 @@ const ProfileContent = () => {
     >
       <Container size="lg" px="md">
         <Stack gap="lg">
-          {/* Profile Header Card */}
+    
           <Card 
             shadow="sm" 
             padding="xl" 
@@ -392,7 +391,6 @@ const ProfileContent = () => {
             </Group>
           </Card>
 
-          {/* Tabs */}
           <Card 
             shadow="sm" 
             padding={0} 
@@ -447,7 +445,7 @@ const ProfileContent = () => {
               </Tabs.List>
 
               <Box p="lg">
-                {/* Kitoblarim Tab */}
+             
                 <Tabs.Panel value="kitoblarim">
                   <Stack align="center" gap="lg" py="xl">
                     <Box
@@ -480,7 +478,7 @@ const ProfileContent = () => {
                   </Stack>
                 </Tabs.Panel>
 
-                {/* Tarmoqlarim Tab */}
+               
                 <Tabs.Panel value="tarmoqlarim">
                   <Stack gap="md">
                     <Title 
@@ -702,7 +700,7 @@ const ProfileContent = () => {
                   </Stack>
                 </Tabs.Panel>
 
-                {/* Xarita Tab */}
+             
                 <Tabs.Panel value="xarita">
                   <Stack gap="md">
                     <Title 

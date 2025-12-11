@@ -103,7 +103,7 @@ const Login = () => {
         localStorage.setItem("userData", JSON.stringify(data.user));
       }
 
-      // Header'ga xabar yuborish
+     
       window.dispatchEvent(new Event('loginSuccess'));
 
       setTimeout(() => navigate("/kitob"), 1000);
@@ -421,7 +421,7 @@ const Login = () => {
 
                 <Text ta="center" mt={20} size="sm" style={{ color: isDark ? "#b0b0b0" : "#666" }}>
                   yoki{" "}
-                  <Anchor href="#" fw={600} style={{ color: t.title, textDecoration: "none" }}>
+                  <Anchor href="/sign" fw={600} style={{ color: t.title, textDecoration: "none" }}>
                     Ro'yxatdan o'tish
                   </Anchor>
                 </Text>

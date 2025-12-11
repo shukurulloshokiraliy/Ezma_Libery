@@ -414,7 +414,7 @@ export default function HomePage() {
                 border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'transparent'}`
               }}
               onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-              onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              onMouseOut={() => e.currentTarget.style.transform = 'translateY(0)'}
             >
               <h3 style={{
                 fontSize: '18px',

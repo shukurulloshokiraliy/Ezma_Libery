@@ -186,7 +186,7 @@ const Header = () => {
                     transition: "all 0.3s ease"
                   }}
                 >
-                  {getUserName()}
+                   {getUserName()}
                 </Button>
               </NavLink>
 

@@ -1,31 +1,77 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Paper, Avatar, Text, Box, Group, Stack, Switch, Loader, Alert, Button, Badge } from '@mantine/core';
-import { IconUser, IconPhone, IconHome, IconBook, IconClock, IconAlertCircle, IconSettings, IconMail } from '@tabler/icons-react';
-import axios from 'axios';
+import { 
+  Container, 
+  Card, 
+  Avatar, 
+  Group, 
+  Text, 
+  Stack, 
+  Tabs,
+  Box,
+  Loader,
+  Alert,
+  Button,
+  ActionIcon,
+  Paper,
+  Title,
+  MantineProvider,
+  createTheme,
+  Badge
+} from '@mantine/core';
+import { 
+  IconBook, 
+  IconShare, 
+  IconMapPin, 
+  IconPhone,
+  IconBrandInstagram,
+  IconBrandFacebook,
+  IconBrandTelegram,
+  IconSettings,
+  IconAlertCircle,
+  IconHome
+} from '@tabler/icons-react';
+import { YMaps, Map, Placemark, ZoomControl, FullscreenControl } from '@pbe/react-yandex-maps';
 
-const Profile = () => {
-  const [isDark, setIsDark] = useState(() => localStorage.getItem('darkMode') === 'true');
-  const [userData, setUserData] = useState(null);
+const theme = createTheme({
+  primaryColor: 'cyan',
+  fontFamily: 'Inter, system-ui, Avenir, Helvetica, Arial, sans-serif',
+});
+
+const ProfileContent = () => {
+  const [isDark, setIsDark] = useState(false);
+  const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [bookRental, setBookRental] = useState(true);
+  const [activeTab, setActiveTab] = useState('xarita');
+  
+  // Map states
+  const [mapCenter, setMapCenter] = useState([41.2995, 69.2401]);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [locationName, setLocationName] = useState('');
+  const [locationLoading, setLocationLoading] = useState(false);
 
   useEffect(() => {
+    // Dark mode o'qish
+    const savedDark = localStorage.getItem('darkMode');
+    if (savedDark) {
+      setIsDark(savedDark === 'true');
+    }
+
+    // Dark mode o'zgarishini tinglash
     const handleDarkModeChange = () => {
-      setIsDark(localStorage.getItem('darkMode') === 'true');
+      const savedDark = localStorage.getItem('darkMode');
+      setIsDark(savedDark === 'true');
     };
 
     window.addEventListener('darkModeChange', handleDarkModeChange);
     window.addEventListener('storage', handleDarkModeChange);
 
+    fetchProfile();
+
     return () => {
       window.removeEventListener('darkModeChange', handleDarkModeChange);
       window.removeEventListener('storage', handleDarkModeChange);
     };
-  }, []);
-
-  useEffect(() => {
-    fetchProfile();
   }, []);
 
   const fetchProfile = async () => {
@@ -41,9 +87,10 @@ const Profile = () => {
         return;
       }
 
-      const { data } = await axios.get(
+      const response = await fetch(
         'https://org-ave-jimmy-learners.trycloudflare.com/api/v1/auth/profile/',
         {
+          method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -51,68 +98,103 @@ const Profile = () => {
         }
       );
 
-      setUserData(data);
-      localStorage.setItem('userData', JSON.stringify(data));
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Sessiya tugagan. Iltimos qayta login qiling.');
+        }
+        throw new Error(`HTTP xato: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('API\'dan olingan ma\'lumot:', data);
+      
+      setProfileData(data);
+      
+      // Set initial map center from profile data
+      if (data.latitude && data.longitude) {
+        const center = [parseFloat(data.latitude), parseFloat(data.longitude)];
+        setMapCenter(center);
+        setSelectedLocation(center);
+      }
+      
+      try {
+        localStorage.setItem('userData', JSON.stringify(data));
+      } catch (e) {
+        console.log('Ma\'lumotni saqlashda xatolik:', e);
+      }
+
     } catch (err) {
       console.error('Profile fetch error:', err);
-      if (err.response?.status === 401) {
-        setError('Sessiya tugagan. Iltimos qayta login qiling.');
-      } else {
-        setError(err.response?.data?.message || 'Profil ma\'lumotlarini yuklashda xatolik');
-      }
+      setError(err.message || 'Profil ma\'lumotlarini yuklashda xatolik');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMapClick = async (e) => {
+    const coords = e.get('coords');
+    setMapCenter(coords);
+    setSelectedLocation(coords);
+    setLocationLoading(true);
+    
+    try {
+      // Yandex Geocoder API orqali joy nomini olish
+      const response = await fetch(
+        `https://geocode-maps.yandex.ru/1.x/?apikey=bc32072f-a50d-4f7e-b22c-a4b70bba1202&geocode=${coords[1]},${coords[0]}&format=json&lang=uz_UZ`
+      );
+      const data = await response.json();
+      
+      const geoObject = data.response.GeoObjectCollection.featureMember[0];
+      if (geoObject) {
+        const name = geoObject.GeoObject.name;
+        const description = geoObject.GeoObject.description;
+        setLocationName(`${name}${description ? ', ' + description : ''}`);
+      } else {
+        setLocationName('Joy nomi topilmadi');
+      }
+    } catch (error) {
+      console.error('Xatolik:', error);
+      setLocationName('Joy nomini olishda xatolik');
+    } finally {
+      setLocationLoading(false);
     }
   };
 
   const handleBookRentalToggle = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const newValue = !bookRental;
+      const newValue = !profileData.can_rent_books;
       
-      await axios.patch(
+      const response = await fetch(
         'https://org-ave-jimmy-learners.trycloudflare.com/api/v1/auth/profile/',
-        { book_rental_enabled: newValue },
         {
+          method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
-          }
+          },
+          body: JSON.stringify({ can_rent_books: newValue })
         }
       );
 
-      setBookRental(newValue);
+      if (response.ok) {
+        const updatedData = await response.json();
+        setProfileData(updatedData);
+        
+        try {
+          localStorage.setItem('userData', JSON.stringify(updatedData));
+        } catch (e) {
+          console.log('Ma\'lumotni saqlashda xatolik:', e);
+        }
+      }
     } catch (err) {
       console.error('Toggle error:', err);
     }
   };
 
-  const theme = {
-    light: {
-      bg: '#f5f5f5',
-      paper: '#ffffff',
-      text: '#000000',
-      subtext: '#666666',
-      border: '#e0e0e0',
-      accent: '#FF6B35',
-      cardBg: '#fff',
-    },
-    dark: {
-      bg: '#1a1a2e',
-      paper: '#2a2a3e',
-      text: '#e0e0e0',
-      subtext: '#a0a0a0',
-      border: '#3a3a5e',
-      accent: '#64B5F6',
-      cardBg: '#1e1e2e',
-    }
-  };
-
-  const t = isDark ? theme.dark : theme.light;
-
   const getUserName = () => {
-    if (!userData) return 'Foydalanuvchi';
-    return userData.name || userData.first_name || userData.username || userData.phone || 'Foydalanuvchi';
+    if (!profileData?.user) return 'Foydalanuvchi';
+    return profileData.user.name || profileData.user.phone || 'Foydalanuvchi';
   };
 
   const getUserInitial = () => {
@@ -122,19 +204,18 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <Box
-        style={{
-          minHeight: '100vh',
-          background: t.bg,
-          display: 'flex',
-          alignItems: 'center',
+      <Box 
+        style={{ 
+          minHeight: 'calc(100vh - 80px)', 
+          display: 'flex', 
+          alignItems: 'center', 
           justifyContent: 'center',
-          transition: 'all 0.3s ease',
+          backgroundColor: isDark ? '#1a1d29' : '#f8f9fa'
         }}
       >
         <Stack align="center" gap="md">
-          <Loader size="xl" color={t.accent} />
-          <Text size="lg" style={{ color: t.text }}>Yuklanmoqda...</Text>
+          <Loader size="lg" color="cyan" />
+          <Text size="lg" c={isDark ? '#fff' : 'dimmed'}>Yuklanmoqda...</Text>
         </Stack>
       </Box>
     );
@@ -142,33 +223,29 @@ const Profile = () => {
 
   if (error) {
     return (
-      <Box
-        style={{
-          minHeight: '100vh',
-          background: t.bg,
-          display: 'flex',
-          alignItems: 'center',
+      <Box 
+        style={{ 
+          minHeight: 'calc(100vh - 80px)', 
+          display: 'flex', 
+          alignItems: 'center', 
           justifyContent: 'center',
-          padding: '20px',
-          transition: 'all 0.3s ease',
-        }}
+          backgroundColor: isDark ? '#1a1d29' : '#f8f9fa'
+        }} 
+        p="md"
       >
         <Container size="sm">
-          <Alert
-            icon={<IconAlertCircle size={24} />}
-            title="Xatolik!"
+          <Alert 
+            icon={<IconAlertCircle size={24} />} 
+            title="Xatolik!" 
             color="red"
-            style={{
-              backgroundColor: isDark ? '#3a2a2e' : '#fff5f5',
-              color: t.text,
-            }}
+            variant="filled"
           >
-            {error}
-            <Button
-              onClick={fetchProfile}
-              mt="md"
-              variant="light"
-              color={isDark ? 'blue' : 'orange'}
+            <Text mb="md">{error}</Text>
+            <Button 
+              onClick={fetchProfile} 
+              color="white" 
+              variant="outline"
+              fullWidth
             >
               Qayta urinish
             </Button>
@@ -178,205 +255,591 @@ const Profile = () => {
     );
   }
 
+  if (!profileData) {
+    return null;
+  }
+
   return (
-    <Box
-      style={{
-        minHeight: '100vh',
-        background: t.bg,
-        padding: '40px 20px',
-        transition: 'all 0.3s ease',
-      }}
+    <Box 
+      style={{ 
+        minHeight: 'calc(100vh - 80px)',
+        backgroundColor: isDark ? '#1a1d29' : '#f8f9fa',
+        transition: 'background-color 0.3s ease'
+      }} 
+      py="xl"
     >
-      <Container size="lg">
-        <Stack gap="xl">
+      <Container size="lg" px="md">
+        <Stack gap="lg">
           {/* Profile Header Card */}
-          <Paper
-            shadow="md"
-            p="xl"
-            radius="lg"
+          <Card 
+            shadow="sm" 
+            padding="xl" 
+            radius="md" 
+            withBorder
             style={{
-              backgroundColor: t.paper,
-              border: `1px solid ${t.border}`,
-              transition: 'all 0.3s ease',
+              backgroundColor: isDark ? '#25262b' : '#ffffff',
+              borderColor: isDark ? '#373A40' : '#dee2e6',
+              transition: 'all 0.3s ease'
             }}
           >
-            <Group align="flex-start" gap="xl">
+            <Group wrap="nowrap" gap="xl" align="flex-start">
               <Avatar
                 size={120}
-                radius="xl"
-                color={isDark ? 'blue' : 'orange'}
-                style={{
-                  fontSize: '48px',
-                  fontWeight: 'bold',
+                radius="md"
+                src={profileData.image}
+                alt={getUserName()}
+                styles={{
+                  root: {
+                    background: 'linear-gradient(135deg, #00BCD4, #0097A7)',
+                    flexShrink: 0
+                  }
                 }}
               >
-                {getUserInitial()}
+                {!profileData.image && <Text size="2.5rem" fw={700} c="white">{getUserInitial()}</Text>}
               </Avatar>
 
-              <Box style={{ flex: 1 }}>
-                <Group gap="sm" mb="md">
-                  <Text
-                    size="32px"
-                    fw={700}
-                    style={{ color: t.text }}
+              <Box style={{ flex: 1, minWidth: 0 }}>
+                <Group gap="sm" mb="md" wrap="wrap">
+                  <Title 
+                    order={2} 
+                    size="h1" 
+                    style={{ 
+                      margin: 0,
+                      color: isDark ? '#fff' : '#000'
+                    }}
                   >
                     {getUserName()}
-                  </Text>
-                  <Button
-                    variant="subtle"
-                    size="sm"
-                    leftSection={<IconSettings size={16} />}
-                    style={{ color: t.accent }}
-                  >
-                    Tahrirlash
-                  </Button>
+                  </Title>
+                  <ActionIcon variant="subtle" color="cyan" size="md">
+                    <IconSettings size={20} />
+                  </ActionIcon>
                 </Group>
 
-                <Stack gap="md">
-                  <Group gap="xs">
-                    <IconPhone size={20} color={t.accent} />
-                    <Text size="md" style={{ color: t.subtext }}>
-                      {userData?.phone || '+998999999999'}
+                <Stack gap="sm">
+                  <Group gap="sm" wrap="nowrap">
+                    <IconPhone size={18} color="#00BCD4" style={{ flexShrink: 0 }} />
+                    <Text 
+                      size="sm" 
+                      c={isDark ? '#909296' : 'dimmed'} 
+                      style={{ wordBreak: 'break-all' }}
+                    >
+                      {profileData.user?.phone || 'Telefon kiritilmagan'}
                     </Text>
                   </Group>
 
-                  {userData?.email && (
-                    <Group gap="xs">
-                      <IconMail size={20} color={t.accent} />
-                      <Text size="md" style={{ color: t.subtext }}>
-                        {userData.email}
+                  <Group gap="sm" wrap="nowrap">
+                    <IconHome size={18} color="#00BCD4" style={{ flexShrink: 0 }} />
+                    <Text 
+                      size="sm" 
+                      c={isDark ? '#909296' : 'dimmed'} 
+                      lineClamp={2}
+                    >
+                      {profileData.address || 'Manzil kiritilmagan'}
+                    </Text>
+                  </Group>
+
+                  <Box mt="sm">
+                    <Paper 
+                      p="sm" 
+                      radius="md" 
+                      withBorder
+                      style={{ 
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        backgroundColor: isDark ? '#2C2E33' : '#f8f9fa',
+                        borderColor: isDark ? '#373A40' : '#dee2e6'
+                      }}
+                    >
+                      <IconBook size={16} color="#00BCD4" />
+                      <Text 
+                        size="xs" 
+                        fw={500}
+                        c={isDark ? '#fff' : '#000'}
+                      >
+                        Kitob ijarasi mavjud
                       </Text>
-                    </Group>
-                  )}
-
-                  <Group gap="xs">
-                    <IconHome size={20} color={t.accent} />
-                    <Text size="md" style={{ color: t.subtext }}>
-                      {userData?.address || '10, Afrasiyab Street, Yunus Rajabi mahalla, Yakkasaray District, Tashkent, 100000, Uzbekistan'}
-                    </Text>
-                  </Group>
+                      <Box
+                        style={{
+                          width: 40,
+                          height: 20,
+                          borderRadius: 20,
+                          backgroundColor: profileData.can_rent_books ? '#00BCD4' : '#ced4da',
+                          position: 'relative',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.3s'
+                        }}
+                        onClick={handleBookRentalToggle}
+                      >
+                        <Box
+                          style={{
+                            position: 'absolute',
+                            width: 16,
+                            height: 16,
+                            borderRadius: '50%',
+                            backgroundColor: 'white',
+                            top: 2,
+                            left: profileData.can_rent_books ? 22 : 2,
+                            transition: 'left 0.3s',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                          }}
+                        />
+                      </Box>
+                    </Paper>
+                  </Box>
                 </Stack>
               </Box>
             </Group>
-          </Paper>
+          </Card>
 
-          {/* Settings Card */}
-          <Paper
-            shadow="md"
-            p="xl"
-            radius="lg"
+          {/* Tabs */}
+          <Card 
+            shadow="sm" 
+            padding={0} 
+            radius="md" 
+            withBorder
             style={{
-              backgroundColor: t.paper,
-              border: `1px solid ${t.border}`,
-              transition: 'all 0.3s ease',
+              backgroundColor: isDark ? '#25262b' : '#ffffff',
+              borderColor: isDark ? '#373A40' : '#dee2e6',
+              transition: 'all 0.3s ease'
             }}
           >
-            <Group justify="space-between" mb="lg">
-              <Text size="xl" fw={600} style={{ color: t.text }}>
-                Sozlamalar
-              </Text>
-            </Group>
+            <Tabs value={activeTab} onChange={setActiveTab} variant="default">
+              <Tabs.List 
+                grow
+                style={{
+                  backgroundColor: isDark ? '#25262b' : '#ffffff'
+                }}
+              >
+                <Tabs.Tab 
+                  value="kitoblarim" 
+                  leftSection={<IconBook size={18} />}
+                  style={{ 
+                    fontSize: '0.9rem', 
+                    padding: '12px 16px',
+                    color: isDark ? '#C1C2C5' : '#495057'
+                  }}
+                >
+                  Kitoblarim
+                </Tabs.Tab>
+                <Tabs.Tab 
+                  value="tarmoqlarim" 
+                  leftSection={<IconShare size={18} />}
+                  style={{ 
+                    fontSize: '0.9rem', 
+                    padding: '12px 16px',
+                    color: isDark ? '#C1C2C5' : '#495057'
+                  }}
+                >
+                  Tarmoqlarim
+                </Tabs.Tab>
+                <Tabs.Tab 
+                  value="xarita" 
+                  leftSection={<IconMapPin size={18} />}
+                  style={{ 
+                    fontSize: '0.9rem', 
+                    padding: '12px 16px',
+                    color: isDark ? '#C1C2C5' : '#495057'
+                  }}
+                >
+                  Xarita
+                </Tabs.Tab>
+              </Tabs.List>
 
-            <Stack gap="lg">
-              <Group justify="space-between" p="md" style={{
-                backgroundColor: t.cardBg,
-                borderRadius: '8px',
-                border: `1px solid ${t.border}`,
-              }}>
-                <Group gap="md">
-                  <IconBook size={24} color={t.accent} />
-                  <Box>
-                    <Text fw={500} style={{ color: t.text }}>Kitob ijarasi mavjud</Text>
-                    <Text size="sm" style={{ color: t.subtext }}>
-                      Kitoblarni ijaraga berish imkoniyati
+              <Box p="lg">
+                {/* Kitoblarim Tab */}
+                <Tabs.Panel value="kitoblarim">
+                  <Stack align="center" gap="lg" py="xl">
+                    <Box
+                      style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: '50%',
+                        backgroundColor: isDark ? '#2C2E33' : '#e7f5ff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <IconBook size={40} color="#00BCD4" />
+                    </Box>
+                    <Title 
+                      order={3} 
+                      ta="center"
+                      c={isDark ? '#fff' : '#000'}
+                    >
+                      Kitoblar ro'yxati
+                    </Title>
+                    <Text 
+                      c={isDark ? '#909296' : 'dimmed'} 
+                      ta="center" 
+                      maw={400}
+                    >
+                      Bu bo'limda sizning kitoblaringiz ko'rsatiladi
                     </Text>
-                  </Box>
-                </Group>
-                <Switch
-                  checked={bookRental}
-                  onChange={handleBookRentalToggle}
-                  size="lg"
-                  color={isDark ? 'blue' : 'orange'}
-                />
-              </Group>
-            </Stack>
-          </Paper>
+                  </Stack>
+                </Tabs.Panel>
 
-          {/* Statistics Card */}
-          <Paper
-            shadow="md"
-            p="xl"
-            radius="lg"
-            style={{
-              backgroundColor: t.paper,
-              border: `1px solid ${t.border}`,
-              transition: 'all 0.3s ease',
-            }}
-          >
-            <Text size="xl" fw={600} mb="lg" style={{ color: t.text }}>
-              Statistika
-            </Text>
+                {/* Tarmoqlarim Tab */}
+                <Tabs.Panel value="tarmoqlarim">
+                  <Stack gap="md">
+                    <Title 
+                      order={3} 
+                      mb="xs"
+                      c={isDark ? '#fff' : '#000'}
+                    >
+                      Ijtimoiy tarmoqlar
+                    </Title>
+                    
+                    {profileData.social_media?.instagram && (
+                      <Paper 
+                        component="a"
+                        href={`https://instagram.com/${profileData.social_media.instagram}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        p="md"
+                        radius="md"
+                        withBorder
+                        style={{ 
+                          textDecoration: 'none',
+                          transition: 'all 0.2s',
+                          cursor: 'pointer',
+                          display: 'block',
+                          backgroundColor: isDark ? '#2C2E33' : '#ffffff',
+                          borderColor: isDark ? '#373A40' : '#dee2e6'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateX(4px)';
+                          e.currentTarget.style.borderColor = '#E1306C';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateX(0)';
+                          e.currentTarget.style.borderColor = isDark ? '#373A40' : '#dee2e6';
+                        }}
+                      >
+                        <Group gap="md" wrap="nowrap">
+                          <Box
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 8,
+                              background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0
+                            }}
+                          >
+                            <IconBrandInstagram size={24} color="white" />
+                          </Box>
+                          <Box style={{ flex: 1, minWidth: 0 }}>
+                            <Text 
+                              size="xs" 
+                              c={isDark ? '#909296' : 'dimmed'} 
+                              mb={2}
+                            >
+                              Instagram
+                            </Text>
+                            <Text 
+                              size="sm" 
+                              fw={500} 
+                              style={{ 
+                                wordBreak: 'break-all',
+                                color: isDark ? '#fff' : '#000'
+                              }}
+                            >
+                              @{profileData.social_media.instagram}
+                            </Text>
+                          </Box>
+                        </Group>
+                      </Paper>
+                    )}
 
-            <Group grow>
-              <Box
-                p="lg"
-                style={{
-                  backgroundColor: t.cardBg,
-                  borderRadius: '12px',
-                  border: `1px solid ${t.border}`,
-                  textAlign: 'center',
-                }}
-              >
-                <IconBook size={32} color={t.accent} style={{ margin: '0 auto 12px' }} />
-                <Text size="32px" fw={700} style={{ color: t.text }}>
-                  {userData?.total_books || 0}
-                </Text>
-                <Text size="sm" style={{ color: t.subtext }}>
-                  Jami kitoblar
-                </Text>
+                    {profileData.social_media?.facebook && (
+                      <Paper 
+                        component="a"
+                        href={`https://facebook.com/${profileData.social_media.facebook}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        p="md"
+                        radius="md"
+                        withBorder
+                        style={{ 
+                          textDecoration: 'none',
+                          transition: 'all 0.2s',
+                          cursor: 'pointer',
+                          display: 'block',
+                          backgroundColor: isDark ? '#2C2E33' : '#ffffff',
+                          borderColor: isDark ? '#373A40' : '#dee2e6'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateX(4px)';
+                          e.currentTarget.style.borderColor = '#1877F2';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateX(0)';
+                          e.currentTarget.style.borderColor = isDark ? '#373A40' : '#dee2e6';
+                        }}
+                      >
+                        <Group gap="md" wrap="nowrap">
+                          <Box
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 8,
+                              backgroundColor: '#1877F2',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0
+                            }}
+                          >
+                            <IconBrandFacebook size={24} color="white" />
+                          </Box>
+                          <Box style={{ flex: 1, minWidth: 0 }}>
+                            <Text 
+                              size="xs" 
+                              c={isDark ? '#909296' : 'dimmed'} 
+                              mb={2}
+                            >
+                              Facebook
+                            </Text>
+                            <Text 
+                              size="sm" 
+                              fw={500} 
+                              style={{ 
+                                wordBreak: 'break-all',
+                                color: isDark ? '#fff' : '#000'
+                              }}
+                            >
+                              {profileData.social_media.facebook}
+                            </Text>
+                          </Box>
+                        </Group>
+                      </Paper>
+                    )}
+
+                    {profileData.social_media?.telegram && (
+                      <Paper 
+                        component="a"
+                        href={`https://t.me/${profileData.social_media.telegram}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        p="md"
+                        radius="md"
+                        withBorder
+                        style={{ 
+                          textDecoration: 'none',
+                          transition: 'all 0.2s',
+                          cursor: 'pointer',
+                          display: 'block',
+                          backgroundColor: isDark ? '#2C2E33' : '#ffffff',
+                          borderColor: isDark ? '#373A40' : '#dee2e6'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateX(4px)';
+                          e.currentTarget.style.borderColor = '#0088cc';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateX(0)';
+                          e.currentTarget.style.borderColor = isDark ? '#373A40' : '#dee2e6';
+                        }}
+                      >
+                        <Group gap="md" wrap="nowrap">
+                          <Box
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 8,
+                              backgroundColor: '#0088cc',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0
+                            }}
+                          >
+                            <IconBrandTelegram size={24} color="white" />
+                          </Box>
+                          <Box style={{ flex: 1, minWidth: 0 }}>
+                            <Text 
+                              size="xs" 
+                              c={isDark ? '#909296' : 'dimmed'} 
+                              mb={2}
+                            >
+                              Telegram
+                            </Text>
+                            <Text 
+                              size="sm" 
+                              fw={500} 
+                              style={{ 
+                                wordBreak: 'break-all',
+                                color: isDark ? '#fff' : '#000'
+                              }}
+                            >
+                              @{profileData.social_media.telegram}
+                            </Text>
+                          </Box>
+                        </Group>
+                      </Paper>
+                    )}
+
+                    {!profileData.social_media?.instagram && 
+                     !profileData.social_media?.facebook && 
+                     !profileData.social_media?.telegram && (
+                      <Alert 
+                        color="blue" 
+                        variant="light" 
+                        icon={<IconAlertCircle size={20} />}
+                        style={{
+                          backgroundColor: isDark ? '#1e3a5f' : '#e7f5ff'
+                        }}
+                      >
+                        <Text c={isDark ? '#74c0fc' : '#1971c2'}>
+                          Ijtimoiy tarmoqlar ma'lumotlari kiritilmagan
+                        </Text>
+                      </Alert>
+                    )}
+                  </Stack>
+                </Tabs.Panel>
+
+                {/* Xarita Tab */}
+                <Tabs.Panel value="xarita">
+                  <Stack gap="md">
+                    <Title 
+                      order={3}
+                      c={isDark ? '#fff' : '#000'}
+                    >
+                      Manzilim
+                    </Title>
+                    
+                    <Paper 
+                      p="md" 
+                      radius="md" 
+                      withBorder
+                      style={{ 
+                        backgroundColor: isDark ? '#2C2E33' : '#f8f9fa',
+                        borderColor: isDark ? '#373A40' : '#dee2e6'
+                      }}
+                    >
+                      <Group gap="md" align="flex-start" wrap="nowrap">
+                        <IconMapPin size={20} color="#00BCD4" style={{ marginTop: 2, flexShrink: 0 }} />
+                        <Text 
+                          size="sm" 
+                          style={{ 
+                            flex: 1,
+                            color: isDark ? '#C1C2C5' : '#000'
+                          }}
+                        >
+                          {profileData.address || 'Manzil kiritilmagan'}
+                        </Text>
+                      </Group>
+                    </Paper>
+
+                    {selectedLocation && locationName && (
+                      <Alert 
+                        color="cyan" 
+                        variant="light"
+                        icon={<IconMapPin size={20} />}
+                        style={{
+                          backgroundColor: isDark ? '#1a3a3a' : '#e3fafc'
+                        }}
+                      >
+                        <Group gap="xs" wrap="wrap">
+                          <Text 
+                            fw={600} 
+                            size="sm"
+                            c={isDark ? '#5ce1e6' : '#0c8599'}
+                          >
+                            Tanlangan joy:
+                          </Text>
+                          {locationLoading ? (
+                            <Group gap="xs">
+                              <Loader size="xs" color="cyan" />
+                              <Text size="sm" c={isDark ? '#99e9f2' : '#0c8599'}>
+                                Yuklanmoqda...
+                              </Text>
+                            </Group>
+                          ) : (
+                            <Text 
+                              size="sm" 
+                              c={isDark ? '#99e9f2' : '#0c8599'}
+                            >
+                              {locationName}
+                            </Text>
+                          )}
+                        </Group>
+                        <Text 
+                          size="xs" 
+                          c={isDark ? '#66d9e8' : '#1098ad'} 
+                          mt={4}
+                        >
+                          Koordinatalar: {selectedLocation[0].toFixed(6)}, {selectedLocation[1].toFixed(6)}
+                        </Text>
+                      </Alert>
+                    )}
+
+                    <Badge 
+                      size="lg" 
+                      variant="light" 
+                      color="cyan"
+                      style={{ alignSelf: 'flex-start' }}
+                    >
+                      💡 Xaritaning istalgan joyini bosing
+                    </Badge>
+
+                    <Box 
+                      style={{ 
+                        width: '100%', 
+                        height: 500, 
+                        borderRadius: 12, 
+                        overflow: 'hidden',
+                        border: isDark ? '1px solid #373A40' : '1px solid #dee2e6',
+                        boxShadow: isDark 
+                          ? '0 4px 12px rgba(0, 0, 0, 0.5)' 
+                          : '0 4px 12px rgba(0, 0, 0, 0.1)'
+                      }}
+                    >
+                      <YMaps query={{ apikey: 'bc32072f-a50d-4f7e-b22c-a4b70bba1202', lang: 'uz_UZ' }}>
+                        <Map
+                          width="100%"
+                          height="100%"
+                          state={{
+                            center: mapCenter,
+                            zoom: 15,
+                          }}
+                          onClick={handleMapClick}
+                        >
+                          {selectedLocation && (
+                            <Placemark
+                              geometry={selectedLocation}
+                              options={{
+                                preset: 'islands#redDotIcon',
+                              }}
+                              properties={{
+                                balloonContent: locationName || 'Tanlangan joy',
+                              }}
+                            />
+                          )}
+                          <ZoomControl options={{ float: 'right' }} />
+                          <FullscreenControl />
+                        </Map>
+                      </YMaps>
+                    </Box>
+                  </Stack>
+                </Tabs.Panel>
               </Box>
-
-              <Box
-                p="lg"
-                style={{
-                  backgroundColor: t.cardBg,
-                  borderRadius: '12px',
-                  border: `1px solid ${t.border}`,
-                  textAlign: 'center',
-                }}
-              >
-                <IconClock size={32} color={t.accent} style={{ margin: '0 auto 12px' }} />
-                <Text size="32px" fw={700} style={{ color: t.text }}>
-                  {userData?.reading_hours || 0}
-                </Text>
-                <Text size="sm" style={{ color: t.subtext }}>
-                  O'qish soatlari
-                </Text>
-              </Box>
-
-              <Box
-                p="lg"
-                style={{
-                  backgroundColor: t.cardBg,
-                  borderRadius: '12px',
-                  border: `1px solid ${t.border}`,
-                  textAlign: 'center',
-                }}
-              >
-                <IconUser size={32} color={t.accent} style={{ margin: '0 auto 12px' }} />
-                <Text size="32px" fw={700} style={{ color: t.text }}>
-                  {userData?.followers || 0}
-                </Text>
-                <Text size="sm" style={{ color: t.subtext }}>
-                  Obunchilar
-                </Text>
-              </Box>
-            </Group>
-          </Paper>
+            </Tabs>
+          </Card>
         </Stack>
       </Container>
     </Box>
   );
 };
 
-export default Profile;
+export default function Profile() {
+  return (
+    <MantineProvider theme={theme} defaultColorScheme="light">
+      <ProfileContent />
+    </MantineProvider>
+  );
+}

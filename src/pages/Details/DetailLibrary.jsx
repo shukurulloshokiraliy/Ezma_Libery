@@ -2,17 +2,18 @@ import React, { useState, useEffect } from 'react';
 import {
   Container, Box, Text, SimpleGrid, Paper, Group, Button,
   Stack, Flex, Card, Badge, Skeleton, Title, ThemeIcon,
-  Divider, Progress, Alert
+  Progress, Alert, Modal
 } from '@mantine/core';
 import {
   IconBook, IconPhone, IconBrandTelegram, IconMapPin,
-  IconArrowLeft, IconUser, IconCalendar, IconBuilding,
-  IconCheck, IconLanguage, IconCategory, IconFileText,
+  IconUser, IconBuilding, IconCheck, IconCategory,
   IconStar, IconAlertCircle
 } from '@tabler/icons-react';
+import { YMaps, Map, Placemark, ZoomControl, FullscreenControl } from '@pbe/react-yandex-maps';
 
 const API_URL = 'https://org-ave-jimmy-learners.trycloudflare.com/api/v1';
 const LIBRARY_IMAGE = 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=800';
+const YANDEX_API_KEY = 'bc32072f-a50d-4f7e-b22c-a4b70bba1202';
 
 const DetailLibrary = () => {
   const [isDark, setIsDark] = useState(false);
@@ -20,6 +21,9 @@ const DetailLibrary = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [mapModalOpened, setMapModalOpened] = useState(false);
+  const [mapCenter, setMapCenter] = useState([41.2995, 69.2401]); // Toshkent markazi
+  const [selectedLocation, setSelectedLocation] = useState(null);
 
   const getLibraryIdFromUrl = () => {
     const params = new URLSearchParams(window.location.search);
@@ -52,6 +56,7 @@ const DetailLibrary = () => {
         const libraryId = getLibraryIdFromUrl();
         console.log('Kutubxona yuklanmoqda:', libraryId);
         
+        // Kutubxona ma'lumotlarini yuklash (fetch API)
         const libRes = await fetch(`${API_URL}/libraries/library/${libraryId}/`);
         if (!libRes.ok) throw new Error('Kutubxona topilmadi');
         
@@ -59,6 +64,16 @@ const DetailLibrary = () => {
         console.log('Kutubxona:', libData);
         setLibrary(libData);
 
+        // Agar koordinatalar bo'lsa, xaritani sozlash
+        if (libData.location) {
+          const coords = parseCoordinates(libData.location);
+          if (coords) {
+            setMapCenter(coords);
+            setSelectedLocation(coords);
+          }
+        }
+
+        // Kitoblarni yuklash
         try {
           const booksRes = await fetch(`${API_URL}/books/books/`);
           if (booksRes.ok) {
@@ -71,11 +86,11 @@ const DetailLibrary = () => {
             setBooks(libraryBooks);
           }
         } catch (e) {
-          console.log('Kitoblar yuklanmadi');
+          console.log('Kitoblar yuklanmadi:', e);
         }
       } catch (err) {
         console.error('Xatolik:', err);
-        setError(err.message);
+        setError(err.message || 'Kutubxona topilmadi');
       } finally {
         setLoading(false);
       }
@@ -83,6 +98,27 @@ const DetailLibrary = () => {
     
     loadData();
   }, []);
+
+  const parseCoordinates = (location) => {
+    if (!location) return null;
+    
+    // Koordinata formatini tekshirish: "41.2995, 69.2401"
+    const coords = location.split(',').map(c => parseFloat(c.trim()));
+    if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+      return coords;
+    }
+    return null;
+  };
+
+  const handleOpenMap = () => {
+    setMapModalOpened(true);
+  };
+
+  const handleMapClick = (e) => {
+    const coords = e.get('coords');
+    setSelectedLocation(coords);
+    console.log('Tanlangan koordinatalar:', coords);
+  };
 
   const bgColor = isDark ? '#1a1a1a' : '#f8f9fa';
   const cardBg = isDark ? '#2d2d2d' : 'linear-gradient(180deg, #c17d11 0%, #d4a11e 50%, #c17d11 100%)';
@@ -131,12 +167,6 @@ const DetailLibrary = () => {
   const topCategories = Object.entries(categories)
     .sort(([,a], [,b]) => b - a)
     .slice(0, 3);
-
-  const handleOpenMap = () => {
-    if (library.location) {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(library.location)}`, '_blank');
-    }
-  };
 
   return (
     <Box style={{ minHeight: '100vh', background: bgColor, padding: '20px 0' }}>
@@ -234,7 +264,7 @@ const DetailLibrary = () => {
                 {library.location && (
                   <Group gap={10}>
                     <IconMapPin size={16} color={textSecondary} />
-                    <Text size="sm" style={{ color: textSecondary, cursor: 'pointer' }} onClick={handleOpenMap}>
+                    <Text size="sm" style={{ color: textSecondary }}>
                       {library.location}
                     </Text>
                   </Group>
@@ -252,7 +282,7 @@ const DetailLibrary = () => {
                   border: `1px solid ${isDark ? '#d4a11e' : 'rgba(255,255,255,0.5)'}`
                 }}
               >
-                Google mapsda ko'rish
+                Xaritada ko'rish
               </Button>
             </Stack>
           </Flex>
@@ -439,6 +469,89 @@ const DetailLibrary = () => {
             </SimpleGrid>
           )}
         </Box>
+
+        {/* Map Modal */}
+        <Modal
+          opened={mapModalOpened}
+          onClose={() => setMapModalOpened(false)}
+          title={
+            <Group gap={8}>
+              <IconMapPin size={20} color={isDark ? '#d4a11e' : '#c17d11'} />
+              <Text fw={600} style={{ color: textDark }}>
+                {library.name} - Xaritada
+              </Text>
+            </Group>
+          }
+          size="xl"
+          centered
+          styles={{
+            content: { background: cardBgWhite },
+            header: { 
+              background: cardBgWhite, 
+              borderBottom: `1px solid ${isDark ? '#404040' : '#dee2e6'}`,
+              padding: '20px'
+            },
+            body: { padding: '20px' }
+          }}
+        >
+          <Stack gap="md">
+            {library.location && (
+              <Group gap={8} p="sm" style={{ 
+                background: isDark ? 'rgba(212,161,30,0.1)' : 'rgba(193,125,17,0.1)', 
+                borderRadius: 8 
+              }}>
+                <IconMapPin size={16} color={isDark ? '#d4a11e' : '#c17d11'} />
+                <Text size="sm" style={{ color: textDark }}>
+                  {library.location}
+                </Text>
+              </Group>
+            )}
+
+            <Box 
+              style={{ 
+                width: '100%', 
+                height: 500, 
+                borderRadius: 12, 
+                overflow: 'hidden',
+                border: isDark ? '1px solid #373A40' : '1px solid #dee2e6',
+                boxShadow: isDark 
+                  ? '0 4px 12px rgba(0, 0, 0, 0.5)' 
+                  : '0 4px 12px rgba(0, 0, 0, 0.1)'
+              }}
+            >
+              <YMaps query={{ apikey: YANDEX_API_KEY, lang: 'uz_UZ' }}>
+                <Map
+                  width="100%"
+                  height="100%"
+                  state={{
+                    center: mapCenter,
+                    zoom: 15,
+                  }}
+                  onClick={handleMapClick}
+                >
+                  {selectedLocation && (
+                    <Placemark
+                      geometry={selectedLocation}
+                      options={{
+                        preset: 'islands#redDotIcon',
+                      }}
+                      properties={{
+                        balloonContent: library.name || 'Tanlangan joy',
+                        hintContent: library.location || 'Kutubxona joylashuvi'
+                      }}
+                    />
+                  )}
+                  <ZoomControl options={{ float: 'right' }} />
+                  <FullscreenControl />
+                </Map>
+              </YMaps>
+            </Box>
+
+            <Text size="xs" c="dimmed" ta="center">
+              Xaritani bosib joylashuvni o'zgartirishingiz mumkin
+            </Text>
+          </Stack>
+        </Modal>
       </Container>
     </Box>
   );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Container,
   Paper,
@@ -93,12 +94,11 @@ const SignupContent = () => {
     }));
 
     try {
-      const response = await fetch(
+      const response = await axios.get(
         `https://geocode-maps.yandex.ru/1.x/?apikey=bc32072f-a50d-4f7e-b22c-a4b70bba1202&geocode=${coords[1]},${coords[0]}&format=json&lang=uz_UZ`
       );
-      const data = await response.json();
       
-      const geoObject = data.response.GeoObjectCollection.featureMember[0];
+      const geoObject = response.data.response.GeoObjectCollection.featureMember[0];
       if (geoObject) {
         const name = geoObject.GeoObject.name;
         const description = geoObject.GeoObject.description;
@@ -127,12 +127,11 @@ const SignupContent = () => {
             longitude: coords[1].toString()
           }));
           
-          fetch(
+          axios.get(
             `https://geocode-maps.yandex.ru/1.x/?apikey=bc32072f-a50d-4f7e-b22c-a4b70bba1202&geocode=${coords[1]},${coords[0]}&format=json&lang=uz_UZ`
           )
-            .then(res => res.json())
-            .then(data => {
-              const geoObject = data.response.GeoObjectCollection.featureMember[0];
+            .then(response => {
+              const geoObject = response.data.response.GeoObjectCollection.featureMember[0];
               if (geoObject) {
                 const name = geoObject.GeoObject.name;
                 const description = geoObject.GeoObject.description;
@@ -222,22 +221,17 @@ const SignupContent = () => {
         requestBody.library.social_media.telegram = formData.telegram;
       }
 
-      const response = await fetch(
+      const response = await axios.post(
         'https://org-ave-jimmy-learners.trycloudflare.com/api/v1/auth/register-library/',
+        requestBody,
         {
-          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody)
+          }
         }
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || data.message || 'Ro\'yxatdan o\'tishda xatolik');
-      }
+      const data = response.data;
 
       if (data.access) {
         try {
@@ -254,7 +248,6 @@ const SignupContent = () => {
         }
       }
 
-     
       if (data.user) {
         try {
           localStorage.setItem('userData', JSON.stringify(data.user));
@@ -265,15 +258,17 @@ const SignupContent = () => {
 
       setSuccess(true);
 
-
       setTimeout(() => {
-  
         window.location.href = '/kutubxona';
       }, 2000);
 
     } catch (err) {
       console.error('Registration error:', err);
-      setError(err.message || 'Ro\'yxatdan o\'tishda xatolik yuz berdi');
+      const errorMessage = err.response?.data?.detail || 
+                          err.response?.data?.message || 
+                          err.message || 
+                          'Ro\'yxatdan o\'tishda xatolik yuz berdi';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

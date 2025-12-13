@@ -1,31 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Container, Box, Text, SimpleGrid, Paper, Group, Button,
-  Stack, Flex, Card, Badge, Skeleton, Title, ThemeIcon,
-  Progress, Alert, Modal
-} from '@mantine/core';
-import {
-  IconBook, IconPhone, IconBrandTelegram, IconMapPin,
-  IconUser, IconBuilding, IconCheck, IconCategory,
-  IconStar, IconAlertCircle
-} from '@tabler/icons-react';
-import { YMaps, Map, Placemark, ZoomControl, FullscreenControl } from '@pbe/react-yandex-maps';
+import { AlertCircle, Book, Phone, Send, MapPin, User, Building, Check, Folder, Star, ArrowLeft } from 'lucide-react';
 
 const API_URL = 'https://org-ave-jimmy-learners.trycloudflare.com/api/v1';
-const LIBRARY_IMAGE = 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=800';
-const YANDEX_API_KEY = 'bc32072f-a50d-4f7e-b22c-a4b70bba1202';
 
 const DetailLibrary = () => {
   const [isDark, setIsDark] = useState(false);
   const [library, setLibrary] = useState(null);
-  const [books, setBooks] = useState([]);
+  const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [mapModalOpened, setMapModalOpened] = useState(false);
-  const [mapCenter, setMapCenter] = useState([41.2995, 69.2401]); // Toshkent markazi
-  const [selectedLocation, setSelectedLocation] = useState(null);
 
-  const getLibraryIdFromUrl = () => {
+  const getBookIdFromUrl = () => {
     const params = new URLSearchParams(window.location.search);
     const idFromQuery = params.get('id');
     if (idFromQuery) return idFromQuery;
@@ -38,13 +23,6 @@ const DetailLibrary = () => {
   useEffect(() => {
     const savedMode = localStorage.getItem('darkMode');
     if (savedMode) setIsDark(savedMode === 'true');
-    
-    const handleDarkModeChange = () => {
-      setIsDark(localStorage.getItem('darkMode') === 'true');
-    };
-    
-    window.addEventListener('darkModeChange', handleDarkModeChange);
-    return () => window.removeEventListener('darkModeChange', handleDarkModeChange);
   }, []);
 
   useEffect(() => {
@@ -53,44 +31,32 @@ const DetailLibrary = () => {
       setError(null);
       
       try {
-        const libraryId = getLibraryIdFromUrl();
-        console.log('Kutubxona yuklanmoqda:', libraryId);
+        const bookId = getBookIdFromUrl();
+        console.log('Kitob yuklanmoqda:', bookId);
         
-        // Kutubxona ma'lumotlarini yuklash (fetch API)
-        const libRes = await fetch(`${API_URL}/libraries/library/${libraryId}/`);
-        if (!libRes.ok) throw new Error('Kutubxona topilmadi');
+        const bookRes = await fetch(`${API_URL}/books/book/${bookId}/`);
+        if (!bookRes.ok) throw new Error('Kitob topilmadi');
         
-        const libData = await libRes.json();
-        console.log('Kutubxona:', libData);
-        setLibrary(libData);
+        const bookData = await bookRes.json();
+        console.log('Kitob ma\'lumotlari:', bookData);
+        setBook(bookData);
 
-        // Agar koordinatalar bo'lsa, xaritani sozlash
-        if (libData.location) {
-          const coords = parseCoordinates(libData.location);
-          if (coords) {
-            setMapCenter(coords);
-            setSelectedLocation(coords);
+        if (bookData.libraries && bookData.libraries.length > 0) {
+          try {
+            const libraryId = bookData.libraries[0];
+            const libRes = await fetch(`${API_URL}/libraries/library/${libraryId}/`);
+            if (libRes.ok) {
+              const libData = await libRes.json();
+              console.log('Kutubxona ma\'lumotlari:', libData);
+              setLibrary(libData);
+            }
+          } catch (e) {
+            console.log('Kutubxona yuklanmadi:', e);
           }
-        }
-
-        // Kitoblarni yuklash
-        try {
-          const booksRes = await fetch(`${API_URL}/books/books/`);
-          if (booksRes.ok) {
-            const booksData = await booksRes.json();
-            const allBooks = booksData.results || booksData || [];
-            const libraryBooks = allBooks.filter(book => 
-              book.libraries && book.libraries.includes(parseInt(libraryId))
-            );
-            console.log('Kitoblar:', libraryBooks);
-            setBooks(libraryBooks);
-          }
-        } catch (e) {
-          console.log('Kitoblar yuklanmadi:', e);
         }
       } catch (err) {
         console.error('Xatolik:', err);
-        setError(err.message || 'Kutubxona topilmadi');
+        setError(err.message || 'Kitob topilmadi');
       } finally {
         setLoading(false);
       }
@@ -99,461 +65,285 @@ const DetailLibrary = () => {
     loadData();
   }, []);
 
-  const parseCoordinates = (location) => {
-    if (!location) return null;
-    
-    // Koordinata formatini tekshirish: "41.2995, 69.2401"
-    const coords = location.split(',').map(c => parseFloat(c.trim()));
-    if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-      return coords;
-    }
-    return null;
-  };
-
-  const handleOpenMap = () => {
-    setMapModalOpened(true);
-  };
-
-  const handleMapClick = (e) => {
-    const coords = e.get('coords');
-    setSelectedLocation(coords);
-    console.log('Tanlangan koordinatalar:', coords);
-  };
-
   const bgColor = isDark ? '#1a1a1a' : '#f8f9fa';
-  const cardBg = isDark ? '#2d2d2d' : 'linear-gradient(180deg, #c17d11 0%, #d4a11e 50%, #c17d11 100%)';
-  const cardBgWhite = isDark ? '#2d2d2d' : 'white';
-  const textColor = isDark ? '#e0e0e0' : 'white';
-  const textDark = isDark ? '#e0e0e0' : '#1a1a1a';
-  const textSecondary = isDark ? '#999' : 'rgba(255,255,255,0.9)';
+  const cardBg = isDark ? '#2d2d2d' : 'white';
+  const goldGradient = isDark ? '#2d2d2d' : 'linear-gradient(180deg, #c17d11 0%, #d4a11e 50%, #c17d11 100%)';
+  const textColor = isDark ? '#e0e0e0' : '#1a1a1a';
+  const textLight = isDark ? '#999' : '#666';
+  const goldColor = isDark ? '#d4a11e' : '#c17d11';
 
   if (loading) {
     return (
-      <Box style={{ minHeight: '100vh', background: bgColor, padding: '20px 0' }}>
-        <Container size="xl">
-          <Skeleton height={60} mb={20} />
-          <Skeleton height={400} radius="lg" mb={20} />
-          <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg" mb={20}>
-            <Skeleton height={120} />
-            <Skeleton height={120} />
-            <Skeleton height={120} />
-          </SimpleGrid>
-          <Skeleton height={300} />
-        </Container>
-      </Box>
+      <div style={{ minHeight: '100vh', background: bgColor, padding: '20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ background: cardBg, borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+            <div style={{ height: '300px', background: isDark ? '#404040' : '#e9ecef', borderRadius: '8px', animation: 'pulse 1.5s ease-in-out infinite' }}></div>
+          </div>
+        </div>
+      </div>
     );
   }
 
-  if (error || !library) {
+  if (error || !book) {
     return (
-      <Box style={{ minHeight: '100vh', background: bgColor, padding: '20px 0' }}>
-        <Container size="xl">
-          <Alert icon={<IconAlertCircle />} title="Xatolik" color="red" radius="md">
-            <Text mb="sm">{error || 'Kutubxona topilmadi'}</Text>
-            <Button onClick={() => window.location.reload()}>Qayta yuklash</Button>
-          </Alert>
-        </Container>
-      </Box>
-    );
-  }
-
-  const categories = books.reduce((acc, book) => {
-    if (book.category) {
-      acc[book.category] = (acc[book.category] || 0) + 1;
-    }
-    return acc;
-  }, {});
-
-  const topCategories = Object.entries(categories)
-    .sort(([,a], [,b]) => b - a)
-    .slice(0, 3);
-
-  return (
-    <Box style={{ minHeight: '100vh', background: bgColor, padding: '20px 0' }}>
-      <Container size="xl">
-        {/* Kutubxona asosiy kartochka */}
-        <Paper 
-          shadow="sm" 
-          p={0} 
-          radius="lg" 
-          mb={20}
-          style={{ background: cardBg, border: isDark ? '1px solid #404040' : 'none', overflow: 'hidden' }}
-        >
-          <Flex direction={{ base: 'column', md: 'row' }}>
-            <Box 
-              w={{ base: '100%', md: '40%' }}
-              h={{ base: 250, md: 400 }}
+      <div style={{ minHeight: '100vh', background: bgColor, padding: '20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ 
+            background: '#fee', 
+            border: '1px solid #fcc', 
+            borderRadius: '12px', 
+            padding: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <AlertCircle size={24} color="#c00" />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, color: '#c00', marginBottom: '8px' }}>Xatolik</div>
+              <div style={{ color: '#900', fontSize: '14px' }}>{error || 'Kitob topilmadi'}</div>
+            </div>
+            <button
+              onClick={() => window.location.reload()}
               style={{
-                backgroundImage: `url(${library.image || LIBRARY_IMAGE})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                position: 'relative'
+                background: '#c00',
+                color: 'white',
+                border: 'none',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 500
               }}
             >
-              <Box style={{
+              Qayta yuklash
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: bgColor, padding: '20px' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Back Button */}
+        <button
+          onClick={() => window.history.back()}
+          style={{
+            background: cardBg,
+            border: isDark ? '1px solid #404040' : '1px solid #dee2e6',
+            borderRadius: '8px',
+            padding: '10px 20px',
+            marginBottom: '20px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            color: textColor,
+            fontSize: '14px',
+            fontWeight: 500
+          }}
+        >
+          <ArrowLeft size={18} />
+          Orqaga
+        </button>
+
+        {/* Main Book Card */}
+        <div style={{ 
+          background: cardBg,
+          border: isDark ? '1px solid #404040' : 'none',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          marginBottom: '20px',
+          boxShadow: isDark ? 'none' : '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 0 }}>
+            {/* Image Section */}
+            <div style={{
+              height: '400px',
+              backgroundImage: `url(${book.image || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&w=800'})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              position: 'relative'
+            }}>
+              <div style={{
                 position: 'absolute',
                 bottom: 0,
                 left: 0,
                 right: 0,
                 background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
-                padding: '30px 20px 15px'
+                padding: '40px 20px 20px'
               }}>
-                {library.books > 0 && (
-                  <Badge 
-                    size="lg"
-                    leftSection={<IconCheck size={14} />}
-                    style={{ background: 'rgba(212,161,30,0.9)', color: 'white' }}
-                  >
-                    Faol kutubxona
-                  </Badge>
+                {book.rating && (
+                  <div style={{
+                    background: 'rgba(255,215,0,0.9)',
+                    color: '#000',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontWeight: 600,
+                    fontSize: '14px'
+                  }}>
+                    <Star size={16} fill="#000" />
+                    {book.rating}
+                  </div>
                 )}
-              </Box>
-            </Box>
+              </div>
+            </div>
 
-            <Stack gap="lg" p={30} style={{ flex: 1 }}>
-              <Box>
-                <Group gap={8} mb={8}>
-                  <IconBuilding size={20} color={isDark ? '#d4a11e' : 'rgba(255,255,255,0.9)'} />
-                  <Text size="xs" fw={500} style={{ color: textSecondary, textTransform: 'uppercase' }}>
-                    Kutubxona haqida
-                  </Text>
-                </Group>
-                <Title order={1} size={28} mb={10} style={{ color: textColor }}>
-                  {library.name}
-                </Title>
-                {library.description && (
-                  <Text size="sm" style={{ color: textSecondary, lineHeight: 1.5 }}>
-                    {library.description}
-                  </Text>
-                )}
-              </Box>
+            {/* Info Section */}
+            <div style={{ padding: '30px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <Book size={18} color={goldColor} />
+                <span style={{ fontSize: '12px', color: textLight, textTransform: 'uppercase', fontWeight: 500 }}>
+                  Kitob haqida
+                </span>
+              </div>
 
-              <Group gap={20}>
-                <Box>
-                  <Text size="xs" style={{ color: textSecondary, marginBottom: 4 }}>Jami kitoblar</Text>
-                  <Group gap={6}>
-                    <IconBook size={18} color={isDark ? '#d4a11e' : 'white'} />
-                    <Text size="xl" fw={700} style={{ color: textColor }}>
-                      {books.length}
-                    </Text>
-                  </Group>
-                </Box>
-              </Group>
+              <h1 style={{ fontSize: '28px', fontWeight: 700, color: textColor, marginBottom: '16px' }}>
+                {book.name}
+              </h1>
 
-              <Box style={{ height: 1, background: isDark ? '#404040' : 'rgba(255,255,255,0.3)' }} />
+              {book.description && (
+                <p style={{ color: textLight, fontSize: '14px', lineHeight: 1.6, marginBottom: '24px' }}>
+                  {book.description}
+                </p>
+              )}
 
-              <Stack gap="sm">
-                {library.phone && (
-                  <Group gap={10}>
-                    <IconPhone size={16} color={textSecondary} />
-                    <Text size="sm" style={{ color: textSecondary }}>
-                      {library.phone}
-                    </Text>
-                  </Group>
-                )}
+              <div style={{ 
+                height: '1px', 
+                background: isDark ? '#404040' : '#e9ecef',
+                margin: '20px 0'
+              }} />
 
-                {library.telegram && (
-                  <Group gap={10}>
-                    <IconBrandTelegram size={16} color={textSecondary} />
-                    <Text size="sm" style={{ color: textSecondary }}>
-                      {library.telegram}
-                    </Text>
-                  </Group>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {book.author && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <User size={16} color={textLight} />
+                    <span style={{ color: textColor, fontSize: '14px' }}>
+                      <strong>Muallif:</strong> {book.author}
+                    </span>
+                  </div>
                 )}
 
-                {library.location && (
-                  <Group gap={10}>
-                    <IconMapPin size={16} color={textSecondary} />
-                    <Text size="sm" style={{ color: textSecondary }}>
-                      {library.location}
-                    </Text>
-                  </Group>
+                {book.category && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Folder size={16} color={textLight} />
+                    <span style={{ color: textColor, fontSize: '14px' }}>
+                      <strong>Kategoriya:</strong> {book.category}
+                    </span>
+                  </div>
                 )}
-              </Stack>
 
-              <Button 
-                size="md"
-                fullWidth
-                leftSection={<IconMapPin size={18} />}
-                onClick={handleOpenMap}
-                style={{ 
-                  background: isDark ? 'rgba(212,161,30,0.2)' : 'rgba(255,255,255,0.3)',
-                  color: isDark ? '#d4a11e' : 'white',
-                  border: `1px solid ${isDark ? '#d4a11e' : 'rgba(255,255,255,0.5)'}`
-                }}
-              >
-                Xaritada ko'rish
-              </Button>
-            </Stack>
-          </Flex>
-        </Paper>
+                {book.isbn && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Book size={16} color={textLight} />
+                    <span style={{ color: textColor, fontSize: '14px' }}>
+                      <strong>ISBN:</strong> {book.isbn}
+                    </span>
+                  </div>
+                )}
 
-        {/* Statistika */}
-        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg" mb={20}>
-          <Paper p={20} radius="lg" style={{ background: cardBgWhite }}>
-            <Group gap="md">
-              <ThemeIcon size={50} radius="lg" style={{ background: isDark ? 'rgba(212,161,30,0.2)' : 'linear-gradient(180deg, #c17d11, #d4a11e)' }}>
-                <IconBook size={24} />
-              </ThemeIcon>
-              <Box>
-                <Text size="xs" c="dimmed">Mavjud kitoblar</Text>
-                <Text size="xl" fw={700} style={{ color: textDark }}>
-                  {books.length}
-                </Text>
-              </Box>
-            </Group>
-          </Paper>
+                {book.published_year && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Book size={16} color={textLight} />
+                    <span style={{ color: textColor, fontSize: '14px' }}>
+                      <strong>Nashr yili:</strong> {book.published_year}
+                    </span>
+                  </div>
+                )}
+              </div>
 
-          <Paper p={20} radius="lg" style={{ background: cardBgWhite }}>
-            <Group gap="md">
-              <ThemeIcon size={50} radius="lg" style={{ background: isDark ? 'rgba(212,161,30,0.2)' : 'linear-gradient(180deg, #c17d11, #d4a11e)' }}>
-                <IconCategory size={24} />
-              </ThemeIcon>
-              <Box>
-                <Text size="xs" c="dimmed">Kategoriyalar</Text>
-                <Text size="xl" fw={700} style={{ color: textDark }}>
-                  {Object.keys(categories).length}
-                </Text>
-              </Box>
-            </Group>
-          </Paper>
-
-          <Paper p={20} radius="lg" style={{ background: cardBgWhite }}>
-            <Group gap="md">
-              <ThemeIcon size={50} radius="lg" style={{ background: isDark ? 'rgba(212,161,30,0.2)' : 'linear-gradient(180deg, #c17d11, #d4a11e)' }}>
-                <IconStar size={24} />
-              </ThemeIcon>
-              <Box>
-                <Text size="xs" c="dimmed">Holat</Text>
-                <Text size="xl" fw={700} style={{ color: textDark }}>
-                  {library.books > 0 ? 'Faol' : 'Nofaol'}
-                </Text>
-              </Box>
-            </Group>
-          </Paper>
-        </SimpleGrid>
-
-        {/* Kategoriyalar */}
-        {topCategories.length > 0 && (
-          <Paper p={20} radius="lg" mb={20} style={{ background: cardBgWhite }}>
-            <Group gap={8} mb={15}>
-              <IconCategory size={20} color={isDark ? '#d4a11e' : '#c17d11'} />
-              <Text size="md" fw={600} style={{ color: textDark }}>
-                Top kategoriyalar
-              </Text>
-            </Group>
-            <Stack gap="md">
-              {topCategories.map(([category, count]) => (
-                <Box key={category}>
-                  <Group justify="space-between" mb={6}>
-                    <Text size="sm" fw={500} style={{ color: textDark }}>
-                      {category}
-                    </Text>
-                    <Text size="sm" fw={600} style={{ color: isDark ? '#d4a11e' : '#c17d11' }}>
-                      {count} kitob
-                    </Text>
-                  </Group>
-                  <Progress 
-                    value={(count / books.length) * 100} 
-                    size="sm" 
-                    radius="xl"
-                    color={isDark ? '#d4a11e' : '#c17d11'}
-                  />
-                </Box>
-              ))}
-            </Stack>
-          </Paper>
-        )}
-
-        {/* Kitoblar */}
-        <Box>
-          <Group justify="space-between" mb={15}>
-            <Title order={2} size={20} style={{ color: textDark }}>
-              Barcha kitoblar
-            </Title>
-            <Badge size="lg" style={{ background: isDark ? '#2d2d2d' : '#c17d11', color: 'white' }}>
-              {books.length} ta
-            </Badge>
-          </Group>
-
-          {books.length === 0 ? (
-            <Paper p={40} radius="lg" ta="center" style={{ background: cardBgWhite }}>
-              <IconBook size={48} color="#999" style={{ margin: '0 auto 15px' }} />
-              <Text size="md" fw={600} mb={6} style={{ color: textDark }}>
-                Hozircha kitoblar yo'q
-              </Text>
-              <Text size="sm" c="dimmed">
-                Tez orada qo'shiladi
-              </Text>
-            </Paper>
-          ) : (
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg">
-              {books.map(book => (
-                <Card 
-                  key={book.id}
-                  shadow="sm"
-                  padding={0}
-                  radius="lg"
-                  style={{
-                    background: cardBgWhite,
-                    border: isDark ? '1px solid #404040' : 'none',
-                    overflow: 'hidden',
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                >
-                  <Box 
-                    style={{
-                      height: 200,
-                      backgroundImage: `url(${book.image || LIBRARY_IMAGE})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      position: 'relative'
-                    }}
-                  >
-                    {book.rating && (
-                      <Box style={{
-                        position: 'absolute',
-                        bottom: 8,
-                        right: 8,
-                        background: 'rgba(0,0,0,0.7)',
-                        padding: '4px 8px',
-                        borderRadius: 6
-                      }}>
-                        <Group gap={4}>
-                          <IconStar size={14} color="#ffd43b" fill="#ffd43b" />
-                          <Text size="xs" fw={600} c="white">{book.rating}</Text>
-                        </Group>
-                      </Box>
-                    )}
-                  </Box>
-
-                  <Stack gap="xs" p="md">
-                    <Text fw={600} size="sm" lineClamp={2} style={{ color: textDark, minHeight: 40 }}>
-                      {book.name}
-                    </Text>
-
-                    <Stack gap={4}>
-                      {book.author && (
-                        <Group gap={6}>
-                          <IconUser size={14} color="#999" />
-                          <Text size="xs" c="dimmed" lineClamp={1}>
-                            {book.author}
-                          </Text>
-                        </Group>
-                      )}
-
-                      {book.category && (
-                        <Group gap={6}>
-                          <IconCategory size={14} color="#999" />
-                          <Text size="xs" c="dimmed">
-                            {book.category}
-                          </Text>
-                        </Group>
-                      )}
-                    </Stack>
-
-                    <Badge 
-                      variant="light"
-                      fullWidth
-                      size="sm"
-                      style={{ background: isDark ? 'rgba(212,161,30,0.2)' : 'rgba(193,125,17,0.15)', color: isDark ? '#d4a11e' : '#c17d11' }}
-                    >
-                      Mavjud
-                    </Badge>
-                  </Stack>
-                </Card>
-              ))}
-            </SimpleGrid>
-          )}
-        </Box>
-
-        {/* Map Modal */}
-        <Modal
-          opened={mapModalOpened}
-          onClose={() => setMapModalOpened(false)}
-          title={
-            <Group gap={8}>
-              <IconMapPin size={20} color={isDark ? '#d4a11e' : '#c17d11'} />
-              <Text fw={600} style={{ color: textDark }}>
-                {library.name} - Xaritada
-              </Text>
-            </Group>
-          }
-          size="xl"
-          centered
-          styles={{
-            content: { background: cardBgWhite },
-            header: { 
-              background: cardBgWhite, 
-              borderBottom: `1px solid ${isDark ? '#404040' : '#dee2e6'}`,
-              padding: '20px'
-            },
-            body: { padding: '20px' }
-          }}
-        >
-          <Stack gap="md">
-            {library.location && (
-              <Group gap={8} p="sm" style={{ 
-                background: isDark ? 'rgba(212,161,30,0.1)' : 'rgba(193,125,17,0.1)', 
-                borderRadius: 8 
+              <div style={{
+                marginTop: '24px',
+                padding: '16px',
+                background: isDark ? 'rgba(212,161,30,0.1)' : 'rgba(193,125,17,0.1)',
+                borderRadius: '8px',
+                border: `1px solid ${goldColor}20`
               }}>
-                <IconMapPin size={16} color={isDark ? '#d4a11e' : '#c17d11'} />
-                <Text size="sm" style={{ color: textDark }}>
-                  {library.location}
-                </Text>
-              </Group>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <Check size={16} color={goldColor} />
+                  <span style={{ fontWeight: 600, color: goldColor, fontSize: '14px' }}>Mavjud</span>
+                </div>
+                <p style={{ fontSize: '12px', color: textLight, margin: 0 }}>
+                  Bu kitob kutubxonada mavjud
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Library Info */}
+        {library && (
+          <div style={{
+            background: goldGradient,
+            borderRadius: '12px',
+            padding: '30px',
+            color: isDark ? textColor : 'white',
+            border: isDark ? '1px solid #404040' : 'none'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <Building size={20} color={isDark ? goldColor : 'white'} />
+              <h2 style={{ fontSize: '20px', fontWeight: 600, margin: 0, color: isDark ? textColor : 'white' }}>
+                Kutubxona
+              </h2>
+            </div>
+
+            <h3 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '20px', color: isDark ? textColor : 'white' }}>
+              {library.name}
+            </h3>
+
+            {library.description && (
+              <p style={{ color: isDark ? textLight : 'rgba(255,255,255,0.9)', marginBottom: '20px', lineHeight: 1.6 }}>
+                {library.description}
+              </p>
             )}
 
-            <Box 
-              style={{ 
-                width: '100%', 
-                height: 500, 
-                borderRadius: 12, 
-                overflow: 'hidden',
-                border: isDark ? '1px solid #373A40' : '1px solid #dee2e6',
-                boxShadow: isDark 
-                  ? '0 4px 12px rgba(0, 0, 0, 0.5)' 
-                  : '0 4px 12px rgba(0, 0, 0, 0.1)'
-              }}
-            >
-              <YMaps query={{ apikey: YANDEX_API_KEY, lang: 'uz_UZ' }}>
-                <Map
-                  width="100%"
-                  height="100%"
-                  state={{
-                    center: mapCenter,
-                    zoom: 15,
-                  }}
-                  onClick={handleMapClick}
-                >
-                  {selectedLocation && (
-                    <Placemark
-                      geometry={selectedLocation}
-                      options={{
-                        preset: 'islands#redDotIcon',
-                      }}
-                      properties={{
-                        balloonContent: library.name || 'Tanlangan joy',
-                        hintContent: library.location || 'Kutubxona joylashuvi'
-                      }}
-                    />
-                  )}
-                  <ZoomControl options={{ float: 'right' }} />
-                  <FullscreenControl />
-                </Map>
-              </YMaps>
-            </Box>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '16px',
+              marginTop: '20px'
+            }}>
+              {library.phone && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Phone size={18} color={isDark ? goldColor : 'rgba(255,255,255,0.9)'} />
+                  <span style={{ fontSize: '14px', color: isDark ? textColor : 'rgba(255,255,255,0.9)' }}>
+                    {library.phone}
+                  </span>
+                </div>
+              )}
 
-            <Text size="xs" c="dimmed" ta="center">
-              Xaritani bosib joylashuvni o'zgartirishingiz mumkin
-            </Text>
-          </Stack>
-        </Modal>
-      </Container>
-    </Box>
+              {library.telegram && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Send size={18} color={isDark ? goldColor : 'rgba(255,255,255,0.9)'} />
+                  <span style={{ fontSize: '14px', color: isDark ? textColor : 'rgba(255,255,255,0.9)' }}>
+                    {library.telegram}
+                  </span>
+                </div>
+              )}
+
+              {library.location && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <MapPin size={18} color={isDark ? goldColor : 'rgba(255,255,255,0.9)'} />
+                  <span style={{ fontSize: '14px', color: isDark ? textColor : 'rgba(255,255,255,0.9)' }}>
+                    {library.location}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
+    </div>
   );
 };
 
